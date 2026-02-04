@@ -304,3 +304,169 @@ exports.getOrderDetails = async (req, res) => {
     });
   }
 };
+
+// Tambahkan di akhir file orderController.js
+
+/**
+ * Get All Orders
+ */
+exports.getAllOrders = async (req, res) => {
+  try {
+    const { status, limit = 50, offset = 0 } = req.query;
+    
+    const whereClause = {};
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // Jika bukan admin, filter berdasarkan partner_id user
+    if (req.user.role !== 'admin') {
+      whereClause.partner_id = req.user.partner_id;
+    }
+
+    const orders = await Order.findAndCountAll({
+      where: whereClause,
+      include: [
+        { model: Customer, as: 'customer' },
+        { model: Partner, as: 'partner' }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      success: true,
+      data: orders.rows,
+      total: orders.count
+    });
+
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data order',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Order By ID
+ */
+exports.getOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await Order.findByPk(id, {
+      include: [
+        { model: Customer, as: 'customer' },
+        { model: Partner, as: 'partner' },
+        { 
+          model: OrderStatusHistory, 
+          as: 'status_history',
+          order: [['created_at', 'ASC']]
+        }
+      ]
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order tidak ditemukan'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: order
+    });
+
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data order',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Update Order
+ */
+exports.updateOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order tidak ditemukan'
+      });
+    }
+
+    await order.update(updateData);
+
+    const updatedOrder = await Order.findByPk(id, {
+      include: [
+        { model: Customer, as: 'customer' },
+        { model: Partner, as: 'partner' }
+      ]
+    });
+
+    res.json({
+      success: true,
+      message: 'Order berhasil diupdate',
+      data: updatedOrder
+    });
+
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal update order',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Delete Order
+ */
+exports.deleteOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await Order.findByPk(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order tidak ditemukan'
+      });
+    }
+
+    // Hapus history terlebih dahulu
+    await OrderStatusHistory.destroy({ where: { order_id: id } });
+    
+    // Hapus order
+    await order.destroy();
+
+    res.json({
+      success: true,
+      message: 'Order berhasil dihapus'
+    });
+
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal menghapus order',
+      error: error.message
+    });
+  }
+};

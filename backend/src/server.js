@@ -6,6 +6,9 @@ const { testConnection } = require('./database/connection');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const trackingRoutes = require('./routes/trackingRoutes');
+const partnerRoutes = require('./routes/partnerRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,7 +21,15 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
+// Request logger middleware (optional, for development)
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+  });
+}
+
+// Health check endpoints
 app.get('/', (req, res) => {
   res.json({
     success: true,
@@ -28,7 +39,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Test database connection endpoint
 app.get('/api/health', async (req, res) => {
   const dbConnected = await testConnection();
   res.json({
@@ -39,17 +49,20 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// ========== ROUTES ==========
-app.use('/api/auth', authRoutes);      // Auth routes
-app.use('/api/orders', orderRoutes);   // Order routes
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/tracking', trackingRoutes);
+app.use('/api/partners', partnerRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', err);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err : {}
+    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
@@ -57,7 +70,7 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: `Route ${req.method} ${req.originalUrl} not found`
   });
 });
 
@@ -81,18 +94,28 @@ const startServer = async () => {
       console.log(`🔗 API URL: http://localhost:${PORT}`);
       console.log(`💾 Database: ${dbConnected ? '✅ Connected' : '❌ Disconnected'}`);
       console.log('=================================');
-      console.log('🔐 Auth Routes:');
-      console.log('   POST   /api/auth/register');
+      console.log('📋 Available Endpoints:');
       console.log('   POST   /api/auth/login');
-      console.log('   GET    /api/auth/profile (auth)');
-      console.log('   PUT    /api/auth/profile (auth)');
-      console.log('   PUT    /api/auth/change-password (auth)');
-      console.log('');
-      console.log('📦 Order Routes:');
-      console.log('   POST   /api/orders (auth)');
-      console.log('   GET    /api/orders/track/:kode (public)');
-      console.log('   PUT    /api/orders/:id/status (auth)');
-      console.log('   GET    /api/orders/partner/:id (auth)');
+      console.log('   POST   /api/auth/register');
+      console.log('   GET    /api/auth/profile');
+      console.log('   ');
+      console.log('   GET    /api/orders');
+      console.log('   POST   /api/orders');
+      console.log('   GET    /api/orders/:id');
+      console.log('   PATCH  /api/orders/:id/status');
+      console.log('   PUT    /api/orders/:id');
+      console.log('   DELETE /api/orders/:id');
+      console.log('   ');
+      console.log('   GET    /api/tracking/:code');
+      console.log('   ');
+      console.log('   GET    /api/partners');
+      console.log('   POST   /api/partners');
+      console.log('   GET    /api/partners/:id');
+      console.log('   PUT    /api/partners/:id');
+      console.log('   DELETE /api/partners/:id');
+      console.log('   ');
+      console.log('   GET    /api/dashboard/admin');
+      console.log('   GET    /api/dashboard/mitra');
       console.log('=================================');
     });
   } catch (error) {

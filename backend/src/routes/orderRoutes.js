@@ -1,49 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const {
-  createOrder,
-  trackOrder,
-  updateOrderStatus,
-  getOrdersByPartner,
-  getOrderDetails
-} = require('../controllers/orderController');
+const orderController = require('../controllers/orderController');
+const { authenticate, isAdmin } = require('../middleware/auth');
 
-// Import auth middleware
-const { authenticateToken, checkRole, mitraOnly, adminOnly } = require('../middleware/authMiddleware');
+// Public route - track order tanpa auth
+router.get('/track/:kode', orderController.trackOrder);
 
-/**
- * POST /api/orders
- * Create order baru oleh mitra
- * Requires: Mitra authentication
- */
-router.post('/', authenticateToken, checkRole('mitra', 'admin'), createOrder);
+// All routes below require authentication
+router.use(authenticate);
 
-/**
- * GET /api/orders/track/:kode
- * Track order pakai kode laundry (untuk customer)
- * PUBLIC endpoint - no auth required
- */
-router.get('/track/:kode', trackOrder);
+// Create new order (mitra only)
+router.post('/', orderController.createOrder);
 
-/**
- * GET /api/orders/partner/:partnerId
- * Get semua order dari mitra tertentu
- * Requires: Authentication (mitra hanya bisa lihat order sendiri, admin bisa semua)
- */
-router.get('/partner/:partnerId', authenticateToken, getOrdersByPartner);
+// Get orders by partner
+router.get('/partner/:partnerId', orderController.getOrdersByPartner);
 
-/**
- * GET /api/orders/:orderId
- * Get detail order specific
- * Requires: Authentication
- */
-router.get('/:orderId', authenticateToken, getOrderDetails);
+// Get order details by ID
+router.get('/:orderId', orderController.getOrderDetails);
 
-/**
- * PUT /api/orders/:orderId/status
- * Update status order
- * Requires: Mitra or Admin authentication
- */
-router.put('/:orderId/status', authenticateToken, checkRole('mitra', 'admin'), updateOrderStatus);
+// Update order status
+router.patch('/:orderId/status', orderController.updateOrderStatus);
 
 module.exports = router;

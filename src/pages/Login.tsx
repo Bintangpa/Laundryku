@@ -154,16 +154,9 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="mt-6 p-4 bg-secondary/50 rounded-xl border border-border">
-          <p className="text-xs text-muted-foreground text-center mb-2 font-medium">
-            Demo Login:
-          </p>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p><strong>Admin:</strong> admin@laundryku.com / admin123</p>
-            <p><strong>Mitra:</strong> Daftar baru atau gunakan akun yang sudah dibuat</p>
-          </div>
-        </div>
+        
+       
+        
       </div>
     </div>
   );

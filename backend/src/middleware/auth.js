@@ -135,3 +135,9 @@ exports.mitraOnly = (req, res, next) => {
 
   next();
 };
+
+
+// Alias untuk authenticate (compatibility)
+exports.authenticate = exports.authenticateToken;
+exports.isAdmin = exports.adminOnly;
+exports.isMitra = exports.mitraOnly;
