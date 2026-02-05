@@ -1,133 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LaundryCard } from "@/components/ui/LaundryCard";
-import { Building2 } from "lucide-react";
+import { Building2, Loader2, AlertCircle } from "lucide-react";
+import { partnersAPI } from "@/lib/api";
 
 interface Partner {
-  id: string;
-  name: string;
-  address: string;
-  operationalHours: string;
-  mapsUrl: string;
-  cityId: string;
+  id: number;
+  user_id?: number;
+  nama_toko: string;
+  alamat: string;
+  no_telepon: string;
+  kota: string;
+  maps_url?: string | null; // 🆕 Add maps_url
+  status: string;
+  created_at?: string;
+  updated_at?: string;
 }
-
-const partners: Partner[] = [
-  // Jakarta
-  {
-    id: "1",
-    name: "Fresh & Clean Laundry",
-    address: "Jl. Sudirman No. 123, Jakarta Pusat",
-    operationalHours: "08:00 - 21:00",
-    mapsUrl: "https://maps.google.com/?q=Fresh+Clean+Laundry+Jakarta",
-    cityId: "jakarta",
-  },
-  {
-    id: "2",
-    name: "Sparkle Wash",
-    address: "Jl. Gatot Subroto No. 45, Jakarta Selatan",
-    operationalHours: "07:00 - 22:00",
-    mapsUrl: "https://maps.google.com/?q=Sparkle+Wash+Jakarta",
-    cityId: "jakarta",
-  },
-  {
-    id: "3",
-    name: "Quick Clean Express",
-    address: "Jl. Kemang Raya No. 88, Jakarta Selatan",
-    operationalHours: "24 Jam",
-    mapsUrl: "https://maps.google.com/?q=Quick+Clean+Express+Jakarta",
-    cityId: "jakarta",
-  },
-  // Bandung
-  {
-    id: "4",
-    name: "Bright Wash",
-    address: "Jl. Dago No. 56, Bandung",
-    operationalHours: "08:00 - 20:00",
-    mapsUrl: "https://maps.google.com/?q=Bright+Wash+Bandung",
-    cityId: "bandung",
-  },
-  {
-    id: "5",
-    name: "Clean House Laundry",
-    address: "Jl. Riau No. 78, Bandung",
-    operationalHours: "07:30 - 21:00",
-    mapsUrl: "https://maps.google.com/?q=Clean+House+Laundry+Bandung",
-    cityId: "bandung",
-  },
-  // Surabaya
-  {
-    id: "6",
-    name: "Clean Master",
-    address: "Jl. Pemuda No. 100, Surabaya",
-    operationalHours: "08:00 - 21:00",
-    mapsUrl: "https://maps.google.com/?q=Clean+Master+Surabaya",
-    cityId: "surabaya",
-  },
-  {
-    id: "7",
-    name: "Prima Laundry",
-    address: "Jl. Basuki Rahmat No. 55, Surabaya",
-    operationalHours: "07:00 - 22:00",
-    mapsUrl: "https://maps.google.com/?q=Prima+Laundry+Surabaya",
-    cityId: "surabaya",
-  },
-  // Yogyakarta
-  {
-    id: "8",
-    name: "Jogja Fresh Laundry",
-    address: "Jl. Malioboro No. 32, Yogyakarta",
-    operationalHours: "08:00 - 20:00",
-    mapsUrl: "https://maps.google.com/?q=Jogja+Fresh+Laundry",
-    cityId: "yogyakarta",
-  },
-  // Semarang
-  {
-    id: "9",
-    name: "Semarang Clean",
-    address: "Jl. Pandanaran No. 44, Semarang",
-    operationalHours: "08:00 - 21:00",
-    mapsUrl: "https://maps.google.com/?q=Semarang+Clean",
-    cityId: "semarang",
-  },
-  // Malang
-  {
-    id: "10",
-    name: "Malang Wash Center",
-    address: "Jl. Ijen No. 23, Malang",
-    operationalHours: "07:00 - 21:00",
-    mapsUrl: "https://maps.google.com/?q=Malang+Wash+Center",
-    cityId: "malang",
-  },
-  // Medan
-  {
-    id: "11",
-    name: "Medan Laundry Pro",
-    address: "Jl. Asia No. 67, Medan",
-    operationalHours: "08:00 - 20:00",
-    mapsUrl: "https://maps.google.com/?q=Medan+Laundry+Pro",
-    cityId: "medan",
-  },
-  // Makassar
-  {
-    id: "12",
-    name: "Makassar Fresh Clean",
-    address: "Jl. Penghibur No. 12, Makassar",
-    operationalHours: "08:00 - 21:00",
-    mapsUrl: "https://maps.google.com/?q=Makassar+Fresh+Clean",
-    cityId: "makassar",
-  },
-];
-
-const cityNames: Record<string, string> = {
-  jakarta: "Jakarta",
-  bandung: "Bandung",
-  surabaya: "Surabaya",
-  yogyakarta: "Yogyakarta",
-  semarang: "Semarang",
-  malang: "Malang",
-  medan: "Medan",
-  makassar: "Makassar",
-};
 
 interface PartnersSectionProps {
   selectedCity: string | null;
@@ -135,11 +22,43 @@ interface PartnersSectionProps {
 
 export function PartnersSection({ selectedCity }: PartnersSectionProps) {
   const sectionRef = useRef<HTMLElement>(null);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredPartners = selectedCity
-    ? partners.filter((p) => p.cityId === selectedCity)
-    : [];
+  // Fetch partners from API
+  useEffect(() => {
+    if (!selectedCity) {
+      setPartners([]);
+      return;
+    }
 
+    const fetchPartners = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Use the city name directly from the API
+        const response = await partnersAPI.getByCity(selectedCity);
+
+        if (response.data.success) {
+          setPartners(response.data.data);
+        } else {
+          setError(response.data.message || 'Gagal mengambil data mitra');
+        }
+      } catch (err: any) {
+        console.error('Error fetching partners:', err);
+        const errorMessage = err.response?.data?.message || err.message || 'Terjadi kesalahan saat mengambil data';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPartners();
+  }, [selectedCity]);
+
+  // Auto scroll when city is selected
   useEffect(() => {
     if (selectedCity && sectionRef.current) {
       sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -147,6 +66,12 @@ export function PartnersSection({ selectedCity }: PartnersSectionProps) {
   }, [selectedCity]);
 
   if (!selectedCity) return null;
+
+  // Capitalize city name for display
+  const displayCityName = selectedCity
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 
   return (
     <section ref={sectionRef} className="py-16 md:py-24 bg-secondary/30" id="partners">
@@ -157,30 +82,69 @@ export function PartnersSection({ selectedCity }: PartnersSectionProps) {
           </div>
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-              Mitra Laundry di {cityNames[selectedCity]}
+              Mitra Laundry di {displayCityName}
             </h2>
-            <p className="text-muted-foreground">
-              {filteredPartners.length} mitra tersedia
-            </p>
+            {!loading && !error && (
+              <p className="text-muted-foreground">
+                {partners.length} mitra tersedia
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPartners.map((partner, index) => (
-            <div
-              key={partner.id}
-              className="animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <LaundryCard
-                name={partner.name}
-                address={partner.address}
-                operationalHours={partner.operationalHours}
-                mapsUrl={partner.mapsUrl}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Memuat data mitra...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="flex flex-col items-center justify-center py-12 bg-destructive/10 rounded-lg border border-destructive/20">
+            <AlertCircle className="w-8 h-8 text-destructive mb-4" />
+            <p className="text-destructive font-medium mb-2">Terjadi Kesalahan</p>
+            <p className="text-muted-foreground text-sm">{error}</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Pastikan backend server berjalan di http://localhost:5000
+            </p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && partners.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 bg-muted/50 rounded-lg">
+            <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
+            <p className="text-foreground font-medium mb-2">
+              Belum Ada Mitra di {displayCityName}
+            </p>
+            <p className="text-muted-foreground text-sm">
+              Mitra laundry akan segera hadir di kota ini
+            </p>
+          </div>
+        )}
+
+        {/* Partners Grid */}
+        {!loading && !error && partners.length > 0 && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {partners.map((partner, index) => (
+              <div
+                key={partner.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <LaundryCard
+                  name={partner.nama_toko}
+                  address={partner.alamat}
+                  operationalHours="08:00 - 21:00"
+                  mapsUrl={partner.maps_url || undefined} // 🆕 Pass maps_url from database
+                  phone={partner.no_telepon}
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

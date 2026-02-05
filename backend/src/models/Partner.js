@@ -33,6 +33,12 @@ const Partner = sequelize.define('Partner', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  // 🆕 NEW FIELD: Google Maps URL
+  maps_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    comment: 'Google Maps URL for partner location'
+  },
   status: {
     type: DataTypes.ENUM('active', 'inactive'),
     defaultValue: 'active'

@@ -1,3 +1,4 @@
+import { trackingAPI } from "@/lib/api";
 import { useState } from "react";
 import { Search, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";

@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Plus, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, Plus, LogOut, User, Edit } from 'lucide-react';
 
 export default function MitraDashboard() {
   const { user, partner, logout } = useAuth();
@@ -28,6 +28,15 @@ export default function MitraDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {/* 🆕 NEW: Edit Profile Button */}
+              <Button 
+                onClick={() => navigate('/dashboard/mitra/edit-profile')} 
+                variant="outline"
+                className="gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Edit Profil
+              </Button>
               <Button onClick={() => navigate('/')} variant="outline">
                 Beranda
               </Button>
@@ -43,6 +52,46 @@ export default function MitraDashboard() {
       {/* Content */}
       <div className="container px-4 py-8">
         <div className="max-w-6xl mx-auto">
+          {/* 🆕 NEW: Profile Info Card */}
+          <div className="bg-card rounded-xl border border-border p-6 mb-8">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <User className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-foreground mb-1">
+                    {partner?.nama_toko || 'Nama Laundry'}
+                  </h2>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>{partner?.alamat || '-'}</p>
+                    <p>{partner?.kota || '-'}</p>
+                    <p>📞 {partner?.no_telepon || '-'}</p>
+                    {partner?.maps_url && (
+                      <a 
+                        href={partner.maps_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        📍 Lihat di Google Maps
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Button 
+                onClick={() => navigate('/dashboard/mitra/edit-profile')}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <Edit className="w-3 h-3" />
+                Edit
+              </Button>
+            </div>
+          </div>
+
           {/* Quick Stats */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className="bg-card p-6 rounded-xl border border-border">
