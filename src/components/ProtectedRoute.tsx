@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
-  allowedRoles?: ('admin' | 'mitra')[];
+  allowedRoles?: ('admin' | 'mitra' | 'customer')[];
   redirectTo?: string;
 }
 
@@ -10,10 +10,10 @@ export function ProtectedRoute({
   allowedRoles, 
   redirectTo = '/login' 
 }: ProtectedRouteProps) {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth(); // ✅ FIX: ubah isLoading jadi loading
 
   // Show loading state
-  if (isLoading) {
+  if (loading) { // ✅ FIX: ubah isLoading jadi loading
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -6,9 +6,18 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Index from '@/pages/Index';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
-import MitraDashboard from '@/pages/mitra/Dashboard';
-import AdminDashboard from '@/pages/admin/Dashboard';
 import NotFound from '@/pages/NotFound';
+
+// Admin Pages
+import AdminDashboard from '@/pages/admin/Dashboard';
+
+// Mitra Pages
+import MitraDashboard from '@/pages/mitra/Dashboard';
+import EditProfile from '@/pages/mitra/Editprofil';
+import CreateOrder from '@/pages/mitra/Createorder';
+import OrdersList from '@/pages/mitra/OrdersList';
+import OrderDetail from '@/pages/mitra/OrderDetail';
+import OrderHistory from '@/pages/mitra/Orderhistory';
 
 function App() {
   return (
@@ -23,6 +32,13 @@ function App() {
           {/* Protected Routes - Mitra Only */}
           <Route element={<ProtectedRoute allowedRoles={['mitra']} />}>
             <Route path="/mitra" element={<MitraDashboard />} />
+            <Route path="/dashboard/mitra" element={<MitraDashboard />} />
+            <Route path="/dashboard/mitra/edit-profile" element={<EditProfile />} />
+            <Route path="/dashboard/mitra/create-order" element={<CreateOrder />} />
+            <Route path="/dashboard/mitra/orders" element={<OrdersList />} />
+            <Route path="/dashboard/mitra/orders/:id" element={<OrderDetail />} />
+            <Route path="/dashboard/mitra/orders/:id/edit" element={<OrderDetail />} />
+            <Route path="/dashboard/mitra/history" element={<OrderHistory />} />
           </Route>
 
           {/* Protected Routes - Admin Only */}

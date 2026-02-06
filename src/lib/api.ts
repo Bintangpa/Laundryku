@@ -38,7 +38,7 @@ export const partnersAPI = {
   getByCity: (city: string) => api.get(`/partners/city/${city}`),
   getAvailableCities: () => api.get('/partners/available/cities'),
   
-  // 🆕 Protected endpoints (require auth)
+  // Protected endpoints (require auth)
   getMyProfile: () => api.get('/partners/profile/me'),
   updateMyProfile: (data: any) => api.put('/partners/profile/me', data)
 };
@@ -52,12 +52,19 @@ export const authAPI = {
 
 // ========== ORDERS API ==========
 export const ordersAPI = {
+  // 🆕 Dashboard stats
+  getDashboardStats: () => api.get('/orders/stats/dashboard'),
+  
+  // CRUD operations
   getAll: (params?: any) => api.get('/orders', { params }),
   getById: (id: string) => api.get(`/orders/${id}`),
   create: (data: any) => api.post('/orders', data),
-  updateStatus: (id: string, data: any) => api.patch(`/orders/${id}/status`, data),
   update: (id: string, data: any) => api.put(`/orders/${id}`, data),
-  delete: (id: string) => api.delete(`/orders/${id}`)
+  updateStatus: (id: string, data: any) => api.patch(`/orders/${id}/status`, data),
+  delete: (id: string) => api.delete(`/orders/${id}`),
+  
+  // Track order (public)
+  track: (code: string) => api.get(`/orders/track/${code}`)
 };
 
 // ========== DASHBOARD API ==========

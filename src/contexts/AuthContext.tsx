@@ -1,16 +1,22 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import authService, { User, Partner, LoginCredentials, RegisterData } from '@/lib/services/authService';
+import { authAPI } from '@/lib/api';
+import type { Partner } from '@/types/partner.types';
+
+interface User {
+  id: number;
+  email: string;
+  nama: string;
+  role: 'admin' | 'mitra' | 'customer';
+}
 
 interface AuthContextType {
   user: User | null;
   partner: Partner | null;
-  token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  login: (credentials: { email: string; password: string }) => Promise<void>;
+  register: (data: any) => Promise<void>; // ✅ TAMBAH: Register function
   logout: () => void;
-  refreshProfile: () => Promise<void>;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,130 +24,115 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [partner, setPartner] = useState<Partner | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  // Load user from localStorage on mount
   useEffect(() => {
-    const loadUser = () => {
-      const savedToken = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
-
-      if (savedToken && savedUser) {
-        setToken(savedToken);
-        const userData = JSON.parse(savedUser);
-        setUser(userData.user || userData);
-        setPartner(userData.partner || null);
-      }
-      setIsLoading(false);
-    };
-
-    loadUser();
+    // Initialize auth state
+    checkAuth();
   }, []);
 
-  const login = async (credentials: LoginCredentials) => {
+  const checkAuth = async () => {
     try {
-      const response = await authService.login(credentials);
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
       
-      if (response.success) {
-        const { user, partner, token } = response.data;
+      if (token && savedUser) {
+        const userData = JSON.parse(savedUser);
+        setUser(userData.user || userData);
         
-        // Save to localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify({ user, partner }));
-        
-        // Update state
-        setToken(token);
-        setUser(user);
-        setPartner(partner || null);
-      } else {
-        throw new Error(response.message || 'Login failed');
+        // Load partner data if user is mitra
+        if (userData.partner) {
+          setPartner(userData.partner);
+        }
       }
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Login failed');
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const register = async (data: RegisterData) => {
+  const login = async (credentials: { email: string; password: string }) => {
     try {
-      const response = await authService.register(data);
+      const response = await authAPI.login(credentials.email, credentials.password);
       
-      if (response.success) {
-        const { user, partner, token } = response.data;
+      if (response.data.success) {
+        const { token, user, partner } = response.data.data;
         
         // Save to localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify({ user, partner }));
         
         // Update state
-        setToken(token);
         setUser(user);
-        setPartner(partner || null);
+        if (partner) {
+          setPartner(partner);
+        }
       } else {
-        throw new Error(response.message || 'Registration failed');
+        throw new Error(response.data.message || 'Login gagal');
       }
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Registration failed');
+      console.error('Login error:', error);
+      throw new Error(error.response?.data?.message || 'Email atau password salah');
+    }
+  };
+
+  // ✅ TAMBAH: Register function yang belum ada
+  const register = async (data: any) => {
+    try {
+      const response = await authAPI.register(data);
+      
+      if (response.data.success) {
+        const { token, user, partner } = response.data.data;
+        
+        // Save to localStorage (sama seperti login)
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify({ user, partner }));
+        
+        // Update state
+        setUser(user);
+        if (partner) {
+          setPartner(partner);
+        }
+      } else {
+        throw new Error(response.data.message || 'Registrasi gagal');
+      }
+    } catch (error: any) {
+      console.error('Register error:', error);
+      throw new Error(error.response?.data?.message || 'Registrasi gagal. Silakan coba lagi.');
     }
   };
 
   const logout = () => {
-    authService.logout();
     setUser(null);
     setPartner(null);
-    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
   };
 
-  const refreshProfile = async () => {
-    try {
-      if (!token) return;
-      
-      const response = await authService.getProfile();
-      if (response.success) {
-        const userData = response.data;
-        setUser({
-          id: userData.id,
-          email: userData.email,
-          role: userData.role,
-          is_active: userData.is_active,
-        });
-        setPartner(userData.partner || null);
-        
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify({
-          user: {
-            id: userData.id,
-            email: userData.email,
-            role: userData.role,
-            is_active: userData.is_active,
-          },
-          partner: userData.partner,
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to refresh profile:', error);
-    }
-  };
-
-  const value = {
-    user,
-    partner,
-    token,
-    isAuthenticated: !!user && !!token,
-    isLoading,
-    login,
-    register,
-    logout,
-    refreshProfile,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        partner,
+        isAuthenticated: !!user,
+        login,
+        register, // ✅ TAMBAH: Export register function
+        logout,
+        loading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 }

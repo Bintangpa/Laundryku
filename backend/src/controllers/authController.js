@@ -43,12 +43,21 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Cek apakah email sudah terdaftar
+    // ✅ Cek apakah email sudah terdaftar
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
         message: 'Email sudah terdaftar'
+      });
+    }
+
+    // ✅ BARU: Cek apakah nomor telepon sudah terdaftar
+    const existingPhone = await Partner.findOne({ where: { no_telepon } });
+    if (existingPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nomor telepon sudah terdaftar'
       });
     }
 
@@ -254,6 +263,22 @@ exports.updateProfile = async (req, res) => {
         success: false,
         message: 'Data partner tidak ditemukan'
       });
+    }
+
+    // ✅ BARU: Validasi nomor telepon jika diubah
+    if (no_telepon && no_telepon !== partner.no_telepon) {
+      const existingPhone = await Partner.findOne({ 
+        where: { no_telepon },
+        // Exclude partner saat ini
+        // Note: Sequelize syntax bisa berbeda tergantung versi
+      });
+      
+      if (existingPhone && existingPhone.id !== partner.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nomor telepon sudah digunakan oleh mitra lain'
+        });
+      }
     }
 
     // Update data partner

@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { WashingMachine, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { WashingMachine, Mail, Lock, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,32 +15,37 @@ export default function Login() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setIsLoading(true);
 
     try {
       await login(formData);
       
-      // Login success - redirect based on role
-      const savedUser = localStorage.getItem('user');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        const role = userData.user?.role || userData.role;
-        
-        if (role === 'admin') {
-          navigate('/admin');
-        } else if (role === 'mitra') {
-          navigate('/mitra');
-        } else {
-          navigate('/');
+      setSuccessMessage('Login berhasil! Mengarahkan ke dashboard...');
+      
+      setTimeout(() => {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          const role = userData.user?.role || userData.role;
+          
+          if (role === 'admin') {
+            navigate('/admin');
+          } else if (role === 'mitra') {
+            navigate('/mitra');
+          } else {
+            navigate('/');
+          }
         }
-      }
+      }, 1500);
+      
     } catch (err: any) {
       setError(err.message || 'Login gagal. Periksa email dan password Anda.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -70,7 +75,15 @@ export default function Login() {
 
         {/* Login Card */}
         <div className="bg-card rounded-2xl shadow-xl p-8 border border-border">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+            {/* Success Message */}
+            {successMessage && (
+              <div className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-600 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5 animate-in zoom-in duration-300" />
+                <p className="font-medium">{successMessage}</p>
+              </div>
+            )}
+
             {/* Error Message */}
             {error && (
               <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-sm">
@@ -79,7 +92,7 @@ export default function Login() {
               </div>
             )}
 
-            {/* Email Input */}
+            {/* Email Input - FIX AUTOCOMPLETE */}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email
@@ -95,11 +108,18 @@ export default function Login() {
                   onChange={handleChange}
                   className="pl-12 h-12"
                   required
+                  disabled={isLoading}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  data-lpignore="true"
+                  data-form-type="other"
                 />
               </div>
             </div>
 
-            {/* Password Input */}
+            {/* Password Input - FIX AUTOCOMPLETE */}
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
@@ -115,6 +135,9 @@ export default function Login() {
                   onChange={handleChange}
                   className="pl-12 h-12"
                   required
+                  disabled={isLoading}
+                  autoComplete="off"
+                  data-lpignore="true"
                 />
               </div>
             </div>
@@ -126,10 +149,17 @@ export default function Login() {
               className="w-full h-12 text-base"
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Loading...
-                </>
+                successMessage ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 mr-2 animate-pulse" />
+                    Berhasil! Mengarahkan...
+                  </>
+                ) : (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Memproses...
+                  </>
+                )
               ) : (
                 'Login'
               )}
@@ -153,10 +183,6 @@ export default function Login() {
             </Link>
           </div>
         </div>
-
-        
-       
-        
       </div>
     </div>
   );

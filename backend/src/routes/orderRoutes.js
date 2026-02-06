@@ -9,16 +9,25 @@ router.get('/track/:kode', orderController.trackOrder);
 // All routes below require authentication
 router.use(authenticate);
 
+// 🆕 Get dashboard stats (mitra only)
+router.get('/stats/dashboard', orderController.getDashboardStats);
+
 // Create new order (mitra only)
 router.post('/', orderController.createOrder);
 
-// Get orders by partner
-router.get('/partner/:partnerId', orderController.getOrdersByPartner);
+// Get all orders (untuk mitra yang login)
+router.get('/', orderController.getAllOrders);
 
 // Get order details by ID
-router.get('/:orderId', orderController.getOrderDetails);
+router.get('/:id', orderController.getOrderById);
 
 // Update order status
-router.patch('/:orderId/status', orderController.updateOrderStatus);
+router.patch('/:id/status', orderController.updateOrderStatus);
+
+// Update order (edit data)
+router.put('/:id', orderController.updateOrder);
+
+// Delete order (mitra only)
+router.delete('/:id', orderController.deleteOrder);
 
 module.exports = router;
