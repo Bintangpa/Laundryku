@@ -166,7 +166,7 @@ export default function Register() {
 
         {/* Register Card */}
         <div className="bg-card rounded-2xl shadow-xl p-6 md:p-8 border border-border animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="new-password">
             {/* Success Message */}
             {successMessage && (
               <div className="flex items-start gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl text-green-600 text-sm animate-in fade-in slide-in-from-top-2 duration-300">
@@ -226,7 +226,7 @@ export default function Register() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="email@laundry.com"
+                    placeholder="Masukkan email Anda"
                     value={formData.email}
                     onChange={handleChange}
                     className={cn(
@@ -235,6 +235,13 @@ export default function Register() {
                     )}
                     required
                     disabled={isLoading}
+                    autoComplete="new-password"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    data-1p-ignore="true"
                   />
                 </div>
                 {fieldErrors.email && (
@@ -262,6 +269,9 @@ export default function Register() {
                     className="pl-12 h-12"
                     required
                     disabled={isLoading}
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
                   />
                 </div>
               </div>
@@ -283,6 +293,9 @@ export default function Register() {
                     className="pl-12 h-12"
                     required
                     disabled={isLoading}
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
                   />
                 </div>
               </div>
@@ -304,6 +317,9 @@ export default function Register() {
                     className="pl-12 h-12"
                     required
                     disabled={isLoading}
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
                   />
                 </div>
               </div>
@@ -328,6 +344,9 @@ export default function Register() {
                     )}
                     required
                     disabled={isLoading}
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
                   />
                 </div>
                 {fieldErrors.no_telepon && (
@@ -384,6 +403,9 @@ export default function Register() {
                   className="pl-12 h-12"
                   required
                   disabled={isLoading}
+                  autoComplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
                 />
               </div>
             </div>
