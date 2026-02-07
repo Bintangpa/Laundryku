@@ -7,7 +7,19 @@ interface CityCardProps {
   onClick: () => void;
 }
 
+// ✅ Utility function untuk membersihkan nama kota
+// Menghilangkan kata "KABUPATEN" atau "KOTA" dari awal nama
+const cleanCityName = (cityName: string): string => {
+  return cityName
+    .replace(/^KABUPATEN\s+/i, '') // Hapus "KABUPATEN " di awal (case insensitive)
+    .replace(/^KOTA\s+/i, '')       // Hapus "KOTA " di awal (case insensitive)
+    .trim();                         // Hapus whitespace di awal/akhir
+};
+
 export function CityCard({ name, isSelected, onClick }: CityCardProps) {
+  // Bersihkan nama kota sebelum ditampilkan
+  const displayName = cleanCityName(name);
+
   return (
     <button
       onClick={onClick}
@@ -36,7 +48,7 @@ export function CityCard({ name, isSelected, onClick }: CityCardProps) {
           isSelected && "text-primary"
         )}
       >
-        {name}
+        {displayName}
       </span>
     </button>
   );

@@ -14,9 +14,10 @@ interface AuthContextType {
   partner: Partner | null;
   isAuthenticated: boolean;
   login: (credentials: { email: string; password: string }) => Promise<void>;
-  register: (data: any) => Promise<void>; // ✅ TAMBAH: Register function
+  register: (data: any) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  refreshPartner: () => Promise<void>; // ✅ TAMBAH: Refresh partner function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // ✅ TAMBAH: Register function yang belum ada
+  // Register function
   const register = async (data: any) => {
     try {
       const response = await authAPI.register(data);
@@ -105,6 +106,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ✅ TAMBAH: Refresh partner function untuk reload data partner terbaru
+  const refreshPartner = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || !user) {
+        return;
+      }
+
+      // Panggil API untuk mendapatkan data partner terbaru
+      // Sesuaikan dengan endpoint API Anda
+      const response = await authAPI.getProfile();
+      
+      if (response.data.success) {
+        const { user: updatedUser, partner: updatedPartner } = response.data.data;
+        
+        // Update partner state dengan data terbaru
+        if (updatedPartner) {
+          setPartner(updatedPartner);
+          
+          // Update juga di localStorage
+          const savedData = localStorage.getItem('user');
+          if (savedData) {
+            const userData = JSON.parse(savedData);
+            userData.partner = updatedPartner;
+            if (updatedUser) {
+              userData.user = updatedUser;
+              setUser(updatedUser);
+            }
+            localStorage.setItem('user', JSON.stringify(userData));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing partner data:', error);
+      // Tidak throw error agar tidak mengganggu flow aplikasi
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setPartner(null);
@@ -119,9 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         partner,
         isAuthenticated: !!user,
         login,
-        register, // ✅ TAMBAH: Export register function
+        register,
         logout,
         loading,
+        refreshPartner, // ✅ TAMBAH: Export refresh partner function
       }}
     >
       {children}

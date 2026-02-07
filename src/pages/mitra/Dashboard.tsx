@@ -25,14 +25,43 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 export default function MitraDashboard() {
-  const { user, partner, logout } = useAuth();
+  const { user, partner, logout, refreshPartner } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats();
+    // Refresh partner data dan stats saat dashboard dimuat
+    const loadData = async () => {
+      try {
+        // Refresh partner data terlebih dahulu jika fungsi tersedia
+        if (refreshPartner) {
+          await refreshPartner();
+        }
+        // Kemudian fetch stats
+        await fetchStats();
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        // Tetap fetch stats meskipun refresh partner gagal
+        await fetchStats();
+      }
+    };
+    
+    loadData();
   }, []);
+
+  // Tambahkan listener untuk event focus window
+  // Ini akan refresh data ketika user kembali ke tab/window ini
+  useEffect(() => {
+    const handleFocus = async () => {
+      if (refreshPartner) {
+        await refreshPartner();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshPartner]);
 
   const fetchStats = async () => {
     try {
