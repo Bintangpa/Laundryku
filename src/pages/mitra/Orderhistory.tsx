@@ -56,8 +56,8 @@ export default function OrderHistory() {
       setLoading(true);
       setError(null);
 
-      // Fetch only completed orders
-      const response = await ordersAPI.getAll({ status: 'Selesai' });
+      // ✅ CHANGED: Fetch orders with 'Telah Diambil' status
+      const response = await ordersAPI.getAll({ status: 'Telah Diambil' });
 
       if (response.data.success) {
         setOrders(response.data.data);
@@ -138,7 +138,7 @@ export default function OrderHistory() {
                   Riwayat Order
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Order yang sudah selesai
+                  Order yang sudah diambil customer
                 </p>
               </div>
             </div>
@@ -236,7 +236,7 @@ export default function OrderHistory() {
             <p className="text-muted-foreground">
               {searchTerm
                 ? 'Coba ubah kata kunci pencarian'
-                : 'Riwayat order yang selesai akan muncul di sini'}
+                : 'Riwayat order yang sudah diambil akan muncul di sini'}
             </p>
           </div>
         )}
@@ -253,7 +253,7 @@ export default function OrderHistory() {
                   <TableHead>Total</TableHead>
                   <TableHead>Pembayaran</TableHead>
                   <TableHead>Tanggal Masuk</TableHead>
-                  <TableHead>Tanggal Selesai</TableHead>
+                  <TableHead>Tanggal Diambil</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -322,7 +322,7 @@ export default function OrderHistory() {
         {!loading && !error && filteredOrders.length > 0 && (
           <div className="mt-4 text-sm text-muted-foreground text-center">
             Menampilkan {filteredOrders.length} dari {orders.length} order
-            selesai
+            yang telah diambil
           </div>
         )}
       </div>

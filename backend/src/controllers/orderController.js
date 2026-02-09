@@ -219,14 +219,14 @@ exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status, keterangan } = req.body;
 
-    // Validasi
+    // ✅ CHANGED: 'Selesai' → 'Telah Diambil'
     const validStatus = [
       'Diterima',
       'Sedang Dicuci',
       'Sedang Dikeringkan',
       'Sedang Disetrika',
       'Siap Diambil',
-      'Selesai'
+      'Telah Diambil'
     ];
 
     if (!validStatus.includes(status)) {
@@ -254,19 +254,35 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Update status order
+    // ✅ CHANGED: Update status order - 'Selesai' → 'Telah Diambil'
     await order.update({ 
       status,
-      tanggal_selesai: status === 'Selesai' ? new Date() : order.tanggal_selesai
+      tanggal_selesai: status === 'Telah Diambil' ? new Date() : order.tanggal_selesai
     });
 
-    // Catat di history
-    await OrderStatusHistory.create({
-      order_id: id,
-      status,
-      keterangan: keterangan || `Status diubah menjadi ${status}`,
-      updated_by: req.user.id
+    // âœ… UBAH: UPDATE history yang sudah ada (bukan INSERT baru)
+    // Cari history record untuk order ini
+    const existingHistory = await OrderStatusHistory.findOne({
+      where: { order_id: id }
     });
+
+    if (existingHistory) {
+      // UPDATE record yang sudah ada
+      await existingHistory.update({
+        status,
+        keterangan: keterangan || `Status diubah menjadi ${status}`,
+        updated_by: req.user.id,
+        updated_at: new Date()
+      });
+    } else {
+      // Jika tidak ada history (edge case), baru INSERT
+      await OrderStatusHistory.create({
+        order_id: id,
+        status,
+        keterangan: keterangan || `Status diubah menjadi ${status}`,
+        updated_by: req.user.id
+      });
+    }
 
     // Fetch updated order
     const updatedOrder = await Order.findByPk(id, {
@@ -470,12 +486,12 @@ exports.getDashboardStats = async (req, res) => {
       }
     });
 
-    // Order aktif (belum selesai)
+    // ✅ CHANGED: Order aktif - 'Selesai' → 'Telah Diambil'
     const activeOrders = await Order.count({
       where: {
         partner_id: partner.id,
         status: {
-          [Op.ne]: 'Selesai'
+          [Op.ne]: 'Telah Diambil'
         }
       }
     });

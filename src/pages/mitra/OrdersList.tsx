@@ -46,6 +46,7 @@ interface Order {
   };
 }
 
+// ✅ CHANGED: 'Selesai' → 'Telah Diambil'
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Semua Status' },
   { value: 'Diterima', label: 'Diterima' },
@@ -53,9 +54,10 @@ const STATUS_OPTIONS = [
   { value: 'Sedang Dikeringkan', label: 'Sedang Dikeringkan' },
   { value: 'Sedang Disetrika', label: 'Sedang Disetrika' },
   { value: 'Siap Diambil', label: 'Siap Diambil' },
-  { value: 'Selesai', label: 'Selesai' },
+  { value: 'Telah Diambil', label: 'Telah Diambil' },
 ];
 
+// ✅ CHANGED: Added color for 'Telah Diambil'
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     'Diterima': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
@@ -63,7 +65,7 @@ const getStatusColor = (status: string) => {
     'Sedang Dikeringkan': 'bg-orange-500/10 text-orange-500 border-orange-500/20',
     'Sedang Disetrika': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
     'Siap Diambil': 'bg-green-500/10 text-green-500 border-green-500/20',
-    'Selesai': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+    'Telah Diambil': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
   };
   return colors[status] || 'bg-gray-500/10 text-gray-500';
 };

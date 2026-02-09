@@ -28,15 +28,17 @@ import {
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
+// ✅ CHANGED: 'Selesai' → 'Telah Diambil'
 const STATUS_OPTIONS = [
   'Diterima',
   'Sedang Dicuci',
   'Sedang Dikeringkan',
   'Sedang Disetrika',
   'Siap Diambil',
-  'Selesai',
+  'Telah Diambil',
 ];
 
+// ✅ CHANGED: Updated color mapping for 'Telah Diambil'
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     'Diterima': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
@@ -44,7 +46,7 @@ const getStatusColor = (status: string) => {
     'Sedang Dikeringkan': 'bg-orange-500/10 text-orange-500 border-orange-500/20',
     'Sedang Disetrika': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
     'Siap Diambil': 'bg-green-500/10 text-green-500 border-green-500/20',
-    'Selesai': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+    'Telah Diambil': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
   };
   return colors[status] || '';
 };
@@ -225,10 +227,10 @@ export default function OrderDetail() {
               <div className="space-y-2">
                 <Label>Keterangan (Opsional)</Label>
                 <Textarea
-                  placeholder="Tambahkan catatan..."
+                  placeholder="Catatan tambahan tentang perubahan status..."
                   value={keterangan}
                   onChange={(e) => setKeterangan(e.target.value)}
-                  rows={2}
+                  rows={3}
                 />
               </div>
               <Button
@@ -375,7 +377,7 @@ export default function OrderDetail() {
                 {order?.tanggal_selesai && (
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      Tanggal Selesai
+                      Tanggal Diambil
                     </p>
                     <p className="font-medium">
                       {format(new Date(order.tanggal_selesai), 'dd MMMM yyyy', {

@@ -1,4 +1,4 @@
-import { Check, Clock, Loader2 } from "lucide-react";
+import { Check, Clock, Loader2, CheckCircle2 } from "lucide-react";
 import { OrderStatus, OrderStatusHistory } from "@/types/tracking.types";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -9,24 +9,24 @@ interface TrackingTimelineProps {
   statusHistory: OrderStatusHistory[];
 }
 
-// Urutan status yang benar
+// ✅ Urutan status yang benar
 const STATUS_FLOW: OrderStatus[] = [
   'Diterima',
   'Sedang Dicuci',
   'Sedang Dikeringkan',
   'Sedang Disetrika',
   'Siap Diambil',
-  'Selesai'
+  'Telah Diambil'
 ];
 
-// Icon dan warna untuk setiap status
+// 🎨 Warna yang lebih baik - Siap Diambil: amber, Telah Diambil: green
 const STATUS_CONFIG = {
   'Diterima': { color: 'bg-blue-500', label: 'Diterima' },
   'Sedang Dicuci': { color: 'bg-cyan-500', label: 'Sedang Dicuci' },
   'Sedang Dikeringkan': { color: 'bg-orange-500', label: 'Sedang Dikeringkan' },
   'Sedang Disetrika': { color: 'bg-purple-500', label: 'Sedang Disetrika' },
-  'Siap Diambil': { color: 'bg-green-500', label: 'Siap Diambil' },
-  'Selesai': { color: 'bg-gray-500', label: 'Selesai' }
+  'Siap Diambil': { color: 'bg-amber-500', label: 'Siap Diambil' },
+  'Telah Diambil': { color: 'bg-green-600', label: 'Telah Diambil' }
 };
 
 export function TrackingTimeline({ currentStatus, statusHistory }: TrackingTimelineProps) {
@@ -44,6 +44,14 @@ export function TrackingTimeline({ currentStatus, statusHistory }: TrackingTimel
     return status === currentStatus;
   };
 
+  // ✅ Function untuk cek apakah status adalah final (Telah Diambil)
+  const isFinalStatus = (status: OrderStatus) => {
+    return status === 'Telah Diambil';
+  };
+
+  // ✅ Cek apakah pesanan sudah selesai (current status = Telah Diambil)
+  const isOrderCompleted = currentStatus === 'Telah Diambil';
+
   // Function untuk get waktu dari history
   const getStatusTime = (status: OrderStatus) => {
     const history = statusHistory.find(h => h.status === status);
@@ -55,14 +63,22 @@ export function TrackingTimeline({ currentStatus, statusHistory }: TrackingTimel
       <h3 className="font-semibold text-lg mb-4">Status Tracking</h3>
       
       <div className="relative">
-        {/* Vertical line */}
-        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
+        {/* ✅ FIXED: Vertical line logic */}
+        {/* Jika pesanan SUDAH SELESAI (Telah Diambil) → garis berhenti sebelum item terakhir */}
+        {/* Jika pesanan BELUM SELESAI → garis sampai bawah (full height) */}
+        <div 
+          className="absolute left-4 top-0 w-0.5 bg-border" 
+          style={{ 
+            height: isOrderCompleted ? `calc(100% - 4.5rem)` : '100%'
+          }}
+        />
 
         {/* Status items */}
         <div className="space-y-6">
           {STATUS_FLOW.map((status, index) => {
             const completed = isCompleted(status);
             const current = isCurrent(status);
+            const isFinal = isFinalStatus(status);
             const config = STATUS_CONFIG[status];
             const time = getStatusTime(status);
 
@@ -77,12 +93,19 @@ export function TrackingTimeline({ currentStatus, statusHistory }: TrackingTimel
                       : "bg-muted text-muted-foreground border-2 border-border"
                   )}
                 >
+                  {/* ✅ FIXED LOGIC: Telah Diambil tidak ada spinner, hanya centang */}
                   {completed && !current && (
                     <Check className="w-4 h-4" />
                   )}
-                  {current && (
+                  {/* Jika current DAN bukan Telah Diambil → tampilkan loading */}
+                  {current && !isFinal && (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   )}
+                  {/* Jika current DAN Telah Diambil → tampilkan centang (bukan loading) */}
+                  {current && isFinal && (
+                    <Check className="w-4 h-4" />
+                  )}
+                  {/* Jika belum completed */}
                   {!completed && !current && (
                     <Clock className="w-4 h-4" />
                   )}
@@ -107,8 +130,12 @@ export function TrackingTimeline({ currentStatus, statusHistory }: TrackingTimel
                   </div>
                   
                   {current && (
-                    <p className="text-sm text-primary font-medium mt-1">
-                      Status saat ini
+                    <p className={cn(
+                      "text-sm font-medium mt-1 flex items-center gap-1",
+                      isFinal ? "text-green-600" : "text-primary"
+                    )}>
+                      {isFinal && <CheckCircle2 className="w-4 h-4" />}
+                      {isFinal ? 'Pesanan sudah selesai' : 'Status saat ini'}
                     </p>
                   )}
                   

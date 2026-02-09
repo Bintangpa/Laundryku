@@ -64,7 +64,7 @@ const Order = sequelize.define('Order', {
       'Sedang Dikeringkan',
       'Sedang Disetrika',
       'Siap Diambil',
-      'Selesai'
+      'Telah Diambil'  // ✅ CHANGED: 'Selesai' → 'Telah Diambil'
     ),
     defaultValue: 'Diterima'
   },
