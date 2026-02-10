@@ -1,6 +1,13 @@
 // File: src/types/partner.types.ts
 // Type definition untuk Partner model
 
+export interface User {
+  id: number;
+  email: string;
+  role: 'admin' | 'mitra' | 'customer';
+  is_active: boolean;
+}
+
 export interface Partner {
   id: number;
   user_id: number;
@@ -8,10 +15,12 @@ export interface Partner {
   alamat: string;
   no_telepon: string;
   kota: string | null;
-  maps_url: string | null; // ✅ Field yang missing!
+  maps_url: string | null;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at: string;
+  // Relations
+  user?: User;
 }
 
 export interface Customer {
@@ -51,4 +60,22 @@ export interface Order {
   partner?: Partner;
   customer?: Customer;
   status_history?: StatusHistory[];
+}
+
+// ✅ TAMBAH: Admin Dashboard Types
+export interface AdminStats {
+  overview: {
+    total_orders: number;
+    total_revenue: number;
+    total_partners: number;
+    total_customers: number;
+  };
+  orders_by_status: {
+    [key: string]: number;
+  };
+  recent_orders?: Order[];
+  revenue_by_month?: {
+    month: string;
+    revenue: number;
+  }[];
 }

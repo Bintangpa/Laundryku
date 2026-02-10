@@ -92,7 +92,7 @@ export function Navbar() {
                   onClick={() => navigate('/login')}
                   variant="outline"
                 >
-                  Login
+                  Login sebagai Mitra
                 </Button>
                 <Button
                   onClick={() => navigate('/register')}
@@ -185,7 +185,7 @@ export function Navbar() {
                     variant="outline"
                     className="w-full"
                   >
-                    Login
+                    Login sebagai Mitra
                   </Button>
                   <Button
                     onClick={() => {

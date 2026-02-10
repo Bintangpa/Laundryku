@@ -154,6 +154,23 @@ exports.login = async (req, res) => {
       });
     }
 
+    // ✅ TAMBAH: Cek status partner jika role mitra
+    if (user.role === 'mitra') {
+      if (!user.partner) {
+        return res.status(403).json({
+          success: false,
+          message: 'Data mitra tidak ditemukan. Hubungi admin.'
+        });
+      }
+
+      if (user.partner.status !== 'active') {
+        return res.status(403).json({
+          success: false,
+          message: 'Akun mitra Anda telah dinonaktifkan oleh admin. Hubungi admin untuk informasi lebih lanjut.'
+        });
+      }
+    }
+
     // Verify password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {

@@ -40,7 +40,12 @@ export const partnersAPI = {
   
   // Protected endpoints (require auth)
   getMyProfile: () => api.get('/partners/profile/me'),
-  updateMyProfile: (data: any) => api.put('/partners/profile/me', data)
+  updateMyProfile: (data: any) => api.put('/partners/profile/me', data),
+  
+  // ✅ TAMBAH: Admin endpoints
+  create: (data: any) => api.post('/partners', data),
+  update: (id: string, data: any) => api.put(`/partners/${id}`, data),
+  delete: (id: string) => api.delete(`/partners/${id}`)
 };
 
 // ========== AUTH API ==========
@@ -52,7 +57,7 @@ export const authAPI = {
 
 // ========== ORDERS API ==========
 export const ordersAPI = {
-  // 🆕 Dashboard stats
+  // Dashboard stats
   getDashboardStats: () => api.get('/orders/stats/dashboard'),
   
   // CRUD operations
