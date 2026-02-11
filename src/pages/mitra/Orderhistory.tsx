@@ -149,16 +149,6 @@ export default function OrderHistory() {
                 </p>
               </div>
             </div>
-            {orders.length > 0 && (
-              <Button
-                onClick={handleExport}
-                variant="outline"
-                className="gap-2"
-              >
-                <FileDown className="w-4 h-4" />
-                Export CSV
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -167,30 +157,24 @@ export default function OrderHistory() {
       <div className="container px-4 py-8">
         {/* Search */}
         <div className="bg-card rounded-xl border border-border p-4 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Cari kode, nama customer, atau nomor WA..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari kode, nama customer, atau nomor WA..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {!loading && !error && orders.length > 0 && (
+              <div className="flex flex-col items-center justify-center px-6 py-3 bg-primary/5 rounded-lg border border-primary/20 min-w-[180px]">
+                <p className="text-xs text-muted-foreground mb-1">Total Order Selesai</p>
+                <p className="text-3xl font-bold text-primary">{filteredOrders.length}</p>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Stats Summary */}
-        {!loading && !error && orders.length > 0 && (
-          <div className="mb-6">
-            <div className="bg-card rounded-xl border border-border p-6 max-w-sm">
-              <p className="text-sm text-muted-foreground mb-1">
-                Total Order Selesai
-              </p>
-              <p className="text-3xl font-bold text-foreground">
-                {filteredOrders.length}
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Error State */}
         {error && (

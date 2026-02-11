@@ -369,13 +369,6 @@ export default function AdminDashboard() {
                   </SelectContent>
                 </Select>
 
-                <Button
-                  onClick={() => navigate('/dashboard/admin/partners/create')}
-                  className="gap-2 h-12"
-                >
-                  <Plus className="w-4 h-4" />
-                  Tambah Mitra
-                </Button>
               </div>
 
               <div className="mt-4 pt-4 border-t border-border">
