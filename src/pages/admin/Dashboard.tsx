@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { showToast } from '@/lib/toast-helper';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -110,37 +111,28 @@ export default function AdminDashboard() {
   const handleToggleStatus = async (id: number, currentStatus: string, nama: string) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     const action = newStatus === 'active' ? 'mengaktifkan' : 'menonaktifkan';
-    
-    if (!confirm(`Apakah Anda yakin ingin ${action} mitra "${nama}"?`)) {
-      return;
-    }
 
     try {
       await partnersAPI.update(id.toString(), { status: newStatus });
       fetchPartners();
-      alert(`Mitra berhasil ${action === 'mengaktifkan' ? 'diaktifkan' : 'dinonaktifkan'}!`);
+      showToast(
+        `Mitra berhasil ${action === 'mengaktifkan' ? 'diaktifkan' : 'dinonaktifkan'}!`,
+        'success'
+      );
     } catch (error) {
       console.error('Error toggling status:', error);
-      alert('Gagal mengubah status mitra!');
+      showToast('Gagal mengubah status mitra!', 'error');
     }
   };
 
   const handleDelete = async (id: number, nama: string) => {
-    if (!confirm(`Apakah Anda yakin ingin MENGHAPUS PERMANEN mitra "${nama}"?\n\nPeringatan: Semua data order mitra ini juga akan terhapus!`)) {
-      return;
-    }
-
-    if (!confirm('Konfirmasi sekali lagi: Data tidak bisa dikembalikan!')) {
-      return;
-    }
-
     try {
       await partnersAPI.delete(id.toString());
       fetchPartners();
-      alert('Mitra berhasil dihapus!');
+      showToast('Mitra berhasil dihapus!', 'success');
     } catch (error) {
       console.error('Error deleting partner:', error);
-      alert('Gagal menghapus mitra!');
+      showToast('Gagal menghapus mitra!', 'error');
     }
   };
 
@@ -164,20 +156,20 @@ export default function AdminDashboard() {
     {
       icon: Users,
       label: 'Kelola Mitra',
-      path: '/dashboard/admin',
+      path: '/admin',
       active: true
     },
     {
       icon: FileText,
       label: 'Manajemen Kota',
-      path: '/dashboard/admin/cities',
+      path: '/admin/cities',
       active: false,
       badge: 'Soon'
     },
     {
       icon: Settings,
       label: 'Pengaturan',
-      path: '/dashboard/admin/settings',
+      path: '/admin/settings',
       active: false,
       badge: 'Soon'
     }
@@ -501,8 +493,8 @@ export default function AdminDashboard() {
                                 className={cn(
                                   "gap-2",
                                   partner.status === 'active' 
-                                    ? "text-orange-600 hover:text-orange-600"
-                                    : "text-green-600 hover:text-green-600"
+                                    ? "text-orange-600 hover:text-red-600 hover:bg-red-50"
+                                    : "text-green-600 hover:text-green-700 hover:bg-green-50"
                                 )}
                               >
                                 {partner.status === 'active' ? (
@@ -521,7 +513,7 @@ export default function AdminDashboard() {
                                 onClick={() => handleDelete(partner.id, partner.nama_toko)}
                                 variant="ghost"
                                 size="sm"
-                                className="gap-2 text-destructive hover:text-destructive"
+                                className="gap-2 text-destructive hover:text-red-700 hover:bg-red-50"
                               >
                                 <Trash2 className="w-4 h-4" />
                                 Hapus

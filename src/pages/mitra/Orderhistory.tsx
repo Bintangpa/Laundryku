@@ -21,6 +21,7 @@ import {
   ArrowLeft,
   FileDown,
   Calendar,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -87,10 +88,16 @@ export default function OrderHistory() {
     }).format(amount);
   };
 
-  const totalRevenue = filteredOrders.reduce(
-    (sum, order) => sum + order.total_harga,
-    0
-  );
+  const handleDelete = async (id: number, kode: string) => {
+    if (!confirm(`Hapus riwayat order ${kode}?`)) return;
+
+    try {
+      await ordersAPI.delete(id.toString());
+      fetchHistory(); // Refresh list
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Gagal menghapus riwayat order');
+    }
+  };
 
   const handleExport = () => {
     // Simple CSV export
@@ -173,33 +180,13 @@ export default function OrderHistory() {
 
         {/* Stats Summary */}
         {!loading && !error && orders.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-card rounded-xl border border-border p-6">
+          <div className="mb-6">
+            <div className="bg-card rounded-xl border border-border p-6 max-w-sm">
               <p className="text-sm text-muted-foreground mb-1">
                 Total Order Selesai
               </p>
               <p className="text-3xl font-bold text-foreground">
                 {filteredOrders.length}
-              </p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-6">
-              <p className="text-sm text-muted-foreground mb-1">
-                Total Pendapatan
-              </p>
-              <p className="text-3xl font-bold text-primary">
-                {formatCurrency(totalRevenue)}
-              </p>
-            </div>
-            <div className="bg-card rounded-xl border border-border p-6">
-              <p className="text-sm text-muted-foreground mb-1">
-                Rata-rata per Order
-              </p>
-              <p className="text-3xl font-bold text-foreground">
-                {formatCurrency(
-                  filteredOrders.length > 0
-                    ? totalRevenue / filteredOrders.length
-                    : 0
-                )}
               </p>
             </div>
           </div>
@@ -241,81 +228,185 @@ export default function OrderHistory() {
           </div>
         )}
 
-        {/* Orders Table */}
+        {/* Orders Table - Desktop */}
         {!loading && !error && filteredOrders.length > 0 && (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kode Tracking</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Layanan</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Pembayaran</TableHead>
-                  <TableHead>Tanggal Masuk</TableHead>
-                  <TableHead>Tanggal Diambil</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono font-semibold text-primary">
-                      {order.kode_laundry}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{order.customer.nama}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {order.customer.no_wa}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {order.jenis_layanan}
-                    </TableCell>
-                    <TableCell className="font-semibold">
-                      {formatCurrency(order.total_harga)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.status_pembayaran === 'Lunas'
-                            ? 'default'
-                            : 'outline'
-                        }
-                      >
-                        {order.status_pembayaran}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
-                        locale: id,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(order.tanggal_selesai), 'dd MMM yyyy', {
-                        locale: id,
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            navigate(`/dashboard/mitra/orders/${order.id}`)
+          <>
+            {/* Desktop View */}
+            <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Kode Tracking</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Layanan</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Pembayaran</TableHead>
+                    <TableHead>Tanggal Masuk</TableHead>
+                    <TableHead>Tanggal Diambil</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono font-semibold text-primary">
+                        {order.kode_laundry}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{order.customer.nama}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {order.customer.no_wa}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {order.jenis_layanan}
+                      </TableCell>
+                      <TableCell className="font-semibold">
+                        {formatCurrency(order.total_harga)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            order.status_pembayaran === 'Lunas'
+                              ? 'default'
+                              : 'outline'
                           }
                         >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                          {order.status_pembayaran}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
+                          locale: id,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(new Date(order.tanggal_selesai), 'dd MMM yyyy', {
+                          locale: id,
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              navigate(`/dashboard/mitra/orders/${order.id}`)
+                            }
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              handleDelete(order.id, order.kode_laundry)
+                            }
+                            className="hover:bg-destructive/10"
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+              {filteredOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="bg-card rounded-xl border border-border p-4 space-y-3"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-mono font-semibold text-primary text-sm">
+                        {order.kode_laundry}
+                      </p>
+                      <p className="font-medium text-foreground mt-1">
+                        {order.customer.nama}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.customer.no_wa}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        order.status_pembayaran === 'Lunas'
+                          ? 'default'
+                          : 'outline'
+                      }
+                      className="ml-2"
+                    >
+                      {order.status_pembayaran}
+                    </Badge>
+                  </div>
+
+                  {/* Info */}
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Layanan:</span>
+                      <span className="font-medium">{order.jenis_layanan}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total:</span>
+                      <span className="font-semibold text-primary">
+                        {formatCurrency(order.total_harga)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Masuk:</span>
+                      <span>
+                        {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
+                          locale: id,
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Diambil:</span>
+                      <span>
+                        {format(new Date(order.tanggal_selesai), 'dd MMM yyyy', {
+                          locale: id,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-2"
+                      onClick={() =>
+                        navigate(`/dashboard/mitra/orders/${order.id}`)
+                      }
+                    >
+                      <Eye className="w-4 h-4" />
+                      Lihat Detail
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 hover:border-destructive"
+                      onClick={() =>
+                        handleDelete(order.id, order.kode_laundry)
+                      }
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Hapus
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Summary */}

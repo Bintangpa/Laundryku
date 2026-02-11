@@ -62,6 +62,19 @@ export default function CreateOrder() {
     (s) => s.value === formData.jenis_layanan
   );
 
+  // Format rupiah dengan titik setiap 3 digit
+  const formatRupiah = (value: string) => {
+    // Hapus semua karakter non-digit
+    const number = value.replace(/\D/g, '');
+    // Format dengan titik sebagai pemisah ribuan
+    return number.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
+
+  // Parse rupiah yang sudah diformat kembali ke angka
+  const parseRupiah = (value: string) => {
+    return value.replace(/\./g, '');
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -69,6 +82,18 @@ export default function CreateOrder() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  // Handler khusus untuk input total_harga dengan format rupiah
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const numericValue = parseRupiah(rawValue);
+    const formattedValue = formatRupiah(numericValue);
+    
+    setFormData((prev) => ({
+      ...prev,
+      total_harga: formattedValue,
     }));
   };
 
@@ -100,7 +125,7 @@ export default function CreateOrder() {
         berat: formData.berat ? parseFloat(formData.berat) : null,
         jumlah_item: formData.jumlah_item ? parseInt(formData.jumlah_item) : null,
         catatan: formData.catatan || null,
-        total_harga: parseFloat(formData.total_harga),
+        total_harga: parseFloat(parseRupiah(formData.total_harga)), // Parse rupiah format
         estimasi_selesai: formData.estimasi_selesai || null,
         metode_pembayaran: null, // No longer collected
         status_pembayaran: formData.status_pembayaran,
@@ -368,11 +393,10 @@ export default function CreateOrder() {
                   <Input
                     id="total_harga"
                     name="total_harga"
-                    type="number"
-                    min="0"
-                    placeholder="Contoh: 25000"
+                    type="text"
+                    placeholder="Contoh: 25.000"
                     value={formData.total_harga}
-                    onChange={handleChange}
+                    onChange={handlePriceChange}
                     required
                     disabled={loading}
                     className="h-11 transition-all focus:ring-2 focus:ring-primary/20"

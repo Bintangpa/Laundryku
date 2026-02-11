@@ -25,7 +25,27 @@ export function LaundryCard({
 
   const handlePhoneClick = () => {
     if (phone) {
-      window.location.href = `tel:${phone}`;
+      // Format nomor untuk WhatsApp (hapus karakter non-digit)
+      let formattedPhone = phone.replace(/\D/g, '');
+      
+      // Jika nomor mulai dengan 0, ganti dengan 62 (kode Indonesia)
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '62' + formattedPhone.substring(1);
+      }
+      
+      // Jika belum ada 62 di depan, tambahkan
+      if (!formattedPhone.startsWith('62')) {
+        formattedPhone = '62' + formattedPhone;
+      }
+      
+      // Buat pesan default
+      const message = encodeURIComponent(
+        `Halo ${name}, saya tertarik dengan layanan laundry Anda. Boleh saya tanya-tanya?`
+      );
+      
+      // Buka WhatsApp
+      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${message}`;
+      window.open(whatsappUrl, '_blank');
     }
   };
 

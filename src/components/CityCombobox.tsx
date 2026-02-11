@@ -75,14 +75,11 @@ export function CityCombobox({
           aria-expanded={open}
           disabled={disabled || loading}
           className={cn(
-            "w-full h-12 justify-between pl-12 font-normal hover:bg-accent/50",
+            "w-full h-12 justify-between pl-4 font-normal hover:bg-accent/50",
             !value && "text-muted-foreground",
             error && "border-destructive focus:ring-destructive"
           )}
         >
-          {/* Icon */}
-          <MapPin className="absolute left-4 w-5 h-5 text-muted-foreground pointer-events-none" />
-          
           {/* Display Text */}
           <span className={cn(
             "truncate",

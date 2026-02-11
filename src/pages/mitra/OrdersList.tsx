@@ -29,6 +29,7 @@ import {
   Trash2,
   Plus,
   ArrowLeft,
+  MessageCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -115,6 +116,35 @@ export default function OrdersList() {
     } catch (err: any) {
       alert(err.response?.data?.message || 'Gagal menghapus order');
     }
+  };
+
+  const handleWhatsApp = (order: Order) => {
+    // Format nomor WA (remove leading 0, add 62)
+    let phoneNumber = order.customer.no_wa.replace(/\D/g, ''); // Remove non-digits
+    if (phoneNumber.startsWith('0')) {
+      phoneNumber = '62' + phoneNumber.substring(1);
+    } else if (!phoneNumber.startsWith('62')) {
+      phoneNumber = '62' + phoneNumber;
+    }
+
+    // Website URL - cuma link homepage
+    const websiteUrl = window.location.origin;
+
+    // Pesan WhatsApp
+    const message = `Halo kak *${order.customer.nama}*,
+
+Terima kasih telah menggunakan layanan kami.
+
+Pesanan laundry Anda dengan kode tracking *${order.kode_laundry}* dapat dicek statusnya di:
+${websiteUrl}
+
+Terima kasih.`;
+
+    // Encode message untuk URL
+    const encodedMessage = encodeURIComponent(message);
+
+    // Buka WhatsApp
+    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, '_blank');
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -243,90 +273,207 @@ export default function OrdersList() {
           </div>
         )}
 
-        {/* Orders Table */}
+        {/* Orders Table - Desktop & Mobile */}
         {!loading && !error && filteredOrders.length > 0 && (
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kode Tracking</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Layanan</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-mono font-semibold text-primary">
-                      {order.kode_laundry}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{order.customer.nama}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {order.customer.no_wa}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {order.jenis_layanan}
-                    </TableCell>
-                    <TableCell className="font-semibold">
-                      {formatCurrency(order.total_harga)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={getStatusColor(order.status)}
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
-                        locale: id,
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            navigate(`/dashboard/mitra/orders/${order.id}`)
-                          }
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            navigate(`/dashboard/mitra/orders/${order.id}/edit`)
-                          }
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            handleDelete(order.id, order.kode_laundry)
-                          }
-                        >
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          <>
+            {/* Desktop View */}
+            <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Kode Tracking</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Layanan</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Tanggal</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-mono font-semibold text-primary">
+                        {order.kode_laundry}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{order.customer.nama}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {order.customer.no_wa}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {order.jenis_layanan}
+                      </TableCell>
+                      <TableCell className="font-semibold">
+                        {formatCurrency(order.total_harga)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={getStatusColor(order.status)}
+                        >
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
+                          locale: id,
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleWhatsApp(order)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Hubungi via WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              navigate(`/dashboard/mitra/orders/${order.id}`)
+                            }
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              navigate(`/dashboard/mitra/orders/${order.id}/edit`)
+                            }
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              handleDelete(order.id, order.kode_laundry)
+                            }
+                            className="hover:bg-destructive/10"
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden space-y-4">
+              {filteredOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="bg-card rounded-xl border border-border p-4 space-y-3"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-mono font-semibold text-primary text-sm">
+                        {order.kode_laundry}
+                      </p>
+                      <p className="font-medium text-foreground mt-1">
+                        {order.customer.nama}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.customer.no_wa}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={getStatusColor(order.status)}
+                    >
+                      {order.status}
+                    </Badge>
+                  </div>
+
+                  {/* Info */}
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Layanan:</span>
+                      <span className="font-medium">{order.jenis_layanan}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total:</span>
+                      <span className="font-semibold text-primary">
+                        {formatCurrency(order.total_harga)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Tanggal:</span>
+                      <span>
+                        {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
+                          locale: id,
+                        })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="space-y-2 pt-2 border-t">
+                    {/* WhatsApp Button - Full Width */}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full gap-2 bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => handleWhatsApp(order)}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Hubungi via WhatsApp
+                    </Button>
+                    
+                    {/* Other Actions - 3 Buttons in Row */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() =>
+                          navigate(`/dashboard/mitra/orders/${order.id}`)
+                        }
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span className="text-xs">Lihat</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1"
+                        onClick={() =>
+                          navigate(`/dashboard/mitra/orders/${order.id}/edit`)
+                        }
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span className="text-xs">Edit</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10 hover:border-destructive"
+                        onClick={() =>
+                          handleDelete(order.id, order.kode_laundry)
+                        }
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-xs">Hapus</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Summary */}
