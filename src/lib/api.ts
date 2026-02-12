@@ -84,4 +84,23 @@ export const adminAPI = {
   updatePassword: (data: any) => api.put('/admin/update-password', data)
 };
 
+// ========== HOMEPAGE API ==========
+export const homepageAPI = {
+  // Hero
+  getHero: () => api.get('/homepage/hero'),
+  updateHero: (data: any) => api.put('/homepage/hero', data),
+
+  // Services
+  getServices: () => api.get('/homepage/services'),
+  updateServicesSection: (data: any) => api.put('/homepage/services', data),
+  addServiceItem: (data: any) => api.post('/homepage/services/items', data),
+  updateServiceItem: (id: number, data: any) => api.put(`/homepage/services/items/${id}`, data),
+  deleteServiceItem: (id: number) => api.delete(`/homepage/services/items/${id}`),
+
+  // Footer
+  getFooter: () => api.get('/homepage/footer'),
+  updateFooter: (data: any) => api.put('/homepage/footer', data),
+};
+
+
 export default api;

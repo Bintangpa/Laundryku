@@ -25,7 +25,8 @@ import {
   FileText,
   Settings,
   TrendingUp,
-  ChevronRight
+  ChevronRight,
+  Layout
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -47,6 +48,13 @@ import { partnersAPI } from '@/lib/api';
 import { Partner } from '@/types/partner.types';
 import { cn } from '@/lib/utils';
 
+// Import panel content management
+import FooterSectionPanel from './FooterSectionPanel';
+import HeroSectionPanel from './HeroSectionPanel';
+import ServicesSectionPanel from './ServicesSectionPanel';
+// Tipe active tab untuk content management
+type ContentTab = 'hero' | 'services' | 'footer';
+
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -59,6 +67,7 @@ export default function AdminDashboard() {
   const [selectedCity, setSelectedCity] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeContentTab, setActiveContentTab] = useState<ContentTab>('hero');
 
   useEffect(() => {
     fetchCities();
@@ -85,17 +94,9 @@ export default function AdminDashboard() {
       setLoading(true);
       const params: any = {};
       
-      if (selectedCity !== 'all') {
-        params.kota = selectedCity;
-      }
-      
-      if (selectedStatus !== 'all') {
-        params.status = selectedStatus;
-      }
-      
-      if (searchQuery.trim()) {
-        params.search = searchQuery.trim();
-      }
+      if (selectedCity !== 'all') params.kota = selectedCity;
+      if (selectedStatus !== 'all') params.status = selectedStatus;
+      if (searchQuery.trim()) params.search = searchQuery.trim();
 
       const response = await partnersAPI.getAll(params);
       if (response.data.success) {
@@ -151,7 +152,7 @@ export default function AdminDashboard() {
   const activePartners = partners.filter(p => p.status === 'active').length;
   const inactivePartners = partners.filter(p => p.status === 'inactive').length;
 
-  // Menu items
+  // Menu items — tambah Content Management
   const menuItems = [
     {
       icon: Users,
@@ -159,11 +160,18 @@ export default function AdminDashboard() {
       path: '/admin'
     },
     {
+      icon: Layout,
+      label: 'Konten Halaman',
+      path: '/admin/content'
+    },
+    {
       icon: Settings,
       label: 'Pengaturan',
       path: '/admin/settings'
     }
   ];
+
+  const isContentPage = location.pathname === '/admin/content';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -205,302 +213,339 @@ export default function AdminDashboard() {
                 className={cn(
                   "w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all",
                   location.pathname === item.path
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "hover:bg-secondary"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
                 </div>
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 opacity-50" />
               </button>
             ))}
           </nav>
 
-          {/* User Info */}
+          {/* User Info & Logout */}
           <div className="p-4 border-t border-border">
-            <div className="mb-3">
-              <p className="text-xs text-muted-foreground">Logged in as</p>
-              <p className="text-sm font-medium truncate">{user?.email}</p>
+            <div className="flex items-center gap-3 px-3 py-2 mb-2 rounded-xl bg-muted/50">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                <UserCheck className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{user?.email}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={() => navigate('/')} variant="outline" size="sm" className="flex-1">
-                Beranda
-              </Button>
-              <Button onClick={handleLogout} variant="outline" size="sm" className="gap-2">
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              <LogOut className="w-5 h-5" />
+              Keluar
+            </Button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="lg:ml-64">
-        {/* Mobile Header */}
-        <div className="lg:hidden bg-card/95 backdrop-blur-sm border-b border-border sticky top-0 z-30">
-          <div className="container px-4 py-4 flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="w-5 h-5" />
-            </Button>
-            <h1 className="text-lg font-bold">Kelola Mitra</h1>
-            <div className="w-10" />
-          </div>
-        </div>
-
-        {/* Desktop Header */}
-        <div className="hidden lg:block bg-card/95 backdrop-blur-sm border-b border-border sticky top-0 z-30">
-          <div className="container px-4 py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Kelola Mitra</h1>
-              <p className="text-muted-foreground mt-1">
-                Manage semua mitra laundry
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="container px-4 py-8">
-          <div className="max-w-7xl mx-auto space-y-6">
-            
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-6 rounded-2xl">
-                <div className="flex items-center gap-3 mb-2">
-                  <Users className="w-5 h-5 text-blue-500" />
-                  <p className="text-sm text-muted-foreground">Total Mitra</p>
-                </div>
-                <p className="text-3xl font-bold text-blue-500">{partners.length}</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-6 rounded-2xl">
-                <div className="flex items-center gap-3 mb-2">
-                  <UserCheck className="w-5 h-5 text-green-500" />
-                  <p className="text-sm text-muted-foreground">Mitra Aktif</p>
-                </div>
-                <p className="text-3xl font-bold text-green-500">{activePartners}</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-500/10 to-gray-500/5 border border-gray-500/20 p-6 rounded-2xl">
-                <div className="flex items-center gap-3 mb-2">
-                  <Ban className="w-5 h-5 text-gray-500" />
-                  <p className="text-sm text-muted-foreground">Nonaktif</p>
-                </div>
-                <p className="text-3xl font-bold text-gray-500">{inactivePartners}</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-6 rounded-2xl">
-                <div className="flex items-center gap-3 mb-2">
-                  <MapPin className="w-5 h-5 text-purple-500" />
-                  <p className="text-sm text-muted-foreground">Kota Aktif</p>
-                </div>
-                <p className="text-3xl font-bold text-purple-500">{cities.length}</p>
-              </div>
-            </div>
-
-            {/* Filters */}
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-lg">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Cari nama mitra, email, atau telepon..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-12"
-                  />
-                </div>
-
-                <Select value={selectedCity} onValueChange={setSelectedCity}>
-                  <SelectTrigger className="w-full md:w-[200px] h-12">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-primary" />
-                      <SelectValue placeholder="Semua Kota" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Kota</SelectItem>
-                    {cities.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {cleanCityName(city)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-full md:w-[180px] h-12">
-                    <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-primary" />
-                      <SelectValue placeholder="Semua Status" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Status</SelectItem>
-                    <SelectItem value="active">Aktif</SelectItem>
-                    <SelectItem value="inactive">Nonaktif</SelectItem>
-                  </SelectContent>
-                </Select>
-
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-border">
+      <div className="lg:pl-64">
+        {/* Header */}
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">
+                  {isContentPage ? 'Konten Halaman' : 'Kelola Mitra'}
+                </h1>
                 <p className="text-sm text-muted-foreground">
-                  Menampilkan <span className="font-semibold text-foreground">{partners.length}</span> mitra
-                  {selectedCity !== 'all' && (
-                    <span> di <span className="font-semibold text-primary">{cleanCityName(selectedCity)}</span></span>
-                  )}
-                  {searchQuery && (
-                    <span> untuk "<span className="font-semibold text-foreground">{searchQuery}</span>"</span>
-                  )}
+                  {isContentPage
+                    ? 'Edit konten Hero, Services, dan Footer'
+                    : `${activePartners} aktif · ${inactivePartners} nonaktif`}
                 </p>
               </div>
             </div>
+          </div>
+        </header>
 
-            {/* Table */}
-            <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
-              {loading ? (
-                <div className="flex items-center justify-center py-20">
-                  <div className="text-center">
-                    <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-                    <p className="text-muted-foreground">Memuat data mitra...</p>
+        <div className="p-6">
+
+          {/* ==================== */}
+          {/* CONTENT MANAGEMENT   */}
+          {/* ==================== */}
+          {isContentPage && (
+            <div>
+              {/* Tab Navigation */}
+              <div className="flex gap-2 mb-6 bg-muted p-1 rounded-xl w-fit">
+                {([
+                  { key: 'hero', label: 'Hero' },
+                  { key: 'services', label: 'Services' },
+                  { key: 'footer', label: 'Footer' },
+                ] as { key: ContentTab; label: string }[]).map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveContentTab(tab.key)}
+                    className={cn(
+                      'px-5 py-2 rounded-lg text-sm font-medium transition-all',
+                      activeContentTab === tab.key
+                        ? 'bg-card shadow-sm text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Panel Content */}
+              {activeContentTab === 'hero' && <HeroSectionPanel />}
+              {activeContentTab === 'services' && <ServicesSectionPanel />}
+              {activeContentTab === 'footer' && <FooterSectionPanel />}
+            </div>
+          )}
+
+          {/* ==================== */}
+          {/* KELOLA MITRA (SAMA)  */}
+          {/* ==================== */}
+          {!isContentPage && (
+            <div>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Mitra</p>
+                      <p className="text-2xl font-bold">{partners.length}</p>
+                    </div>
                   </div>
                 </div>
-              ) : partners.length === 0 ? (
-                <div className="text-center py-20">
-                  <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-                    <Users className="w-8 h-8 text-muted-foreground" />
+                <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Aktif</p>
+                      <p className="text-2xl font-bold">{activePartners}</p>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">Tidak Ada Mitra</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {searchQuery || selectedCity !== 'all' 
-                      ? 'Tidak ada mitra yang sesuai dengan filter'
-                      : 'Belum ada mitra yang terdaftar'}
+                </div>
+                <div className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gray-500/10 flex items-center justify-center">
+                      <XCircle className="w-5 h-5 text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Nonaktif</p>
+                      <p className="text-2xl font-bold">{inactivePartners}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter & Search */}
+              <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-6">
+                <div className="flex flex-col md:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Cari nama mitra, email, atau telepon..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 h-12"
+                    />
+                  </div>
+
+                  <Select value={selectedCity} onValueChange={setSelectedCity}>
+                    <SelectTrigger className="w-full md:w-[200px] h-12">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <SelectValue placeholder="Semua Kota" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Kota</SelectItem>
+                      {cities.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {cleanCityName(city)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="w-full md:w-[180px] h-12">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-primary" />
+                        <SelectValue placeholder="Semua Status" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      <SelectItem value="active">Aktif</SelectItem>
+                      <SelectItem value="inactive">Nonaktif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-sm text-muted-foreground">
+                    Menampilkan <span className="font-semibold text-foreground">{partners.length}</span> mitra
+                    {selectedCity !== 'all' && (
+                      <span> di <span className="font-semibold text-primary">{cleanCityName(selectedCity)}</span></span>
+                    )}
+                    {searchQuery && (
+                      <span> untuk "<span className="font-semibold text-foreground">{searchQuery}</span>"</span>
+                    )}
                   </p>
-                  {(searchQuery || selectedCity !== 'all' || selectedStatus !== 'all') && (
-                    <Button
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSelectedCity('all');
-                        setSelectedStatus('all');
-                      }}
-                      variant="outline"
-                    >
-                      Reset Filter
-                    </Button>
-                  )}
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[50px]">No</TableHead>
-                        <TableHead>Nama Toko</TableHead>
-                        <TableHead>Kota</TableHead>
-                        <TableHead>Kontak</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {partners.map((partner, index) => (
-                        <TableRow key={partner.id}>
-                          <TableCell className="font-medium">{index + 1}</TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{partner.nama_toko}</p>
-                              <p className="text-xs text-muted-foreground">{partner.alamat}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-primary" />
-                              <span>{cleanCityName(partner.kota || '-')}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1 text-sm">
-                              <div className="flex items-center gap-2">
-                                <Phone className="w-3 h-3 text-muted-foreground" />
-                                <span>{partner.no_telepon}</span>
+              </div>
+
+              {/* Table */}
+              <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
+                {loading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="text-center">
+                      <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+                      <p className="text-muted-foreground">Memuat data mitra...</p>
+                    </div>
+                  </div>
+                ) : partners.length === 0 ? (
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                      <Users className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">Tidak Ada Mitra</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchQuery || selectedCity !== 'all' 
+                        ? 'Tidak ada mitra yang sesuai dengan filter'
+                        : 'Belum ada mitra yang terdaftar'}
+                    </p>
+                    {(searchQuery || selectedCity !== 'all' || selectedStatus !== 'all') && (
+                      <Button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSelectedCity('all');
+                          setSelectedStatus('all');
+                        }}
+                        variant="outline"
+                      >
+                        Reset Filter
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]">No</TableHead>
+                          <TableHead>Nama Toko</TableHead>
+                          <TableHead>Kota</TableHead>
+                          <TableHead>Kontak</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {partners.map((partner, index) => (
+                          <TableRow key={partner.id}>
+                            <TableCell className="font-medium">{index + 1}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{partner.nama_toko}</p>
+                                <p className="text-xs text-muted-foreground">{partner.alamat}</p>
                               </div>
-                              {partner.user && (
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-primary" />
+                                <span>{cleanCityName(partner.kota || '-')}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1 text-sm">
                                 <div className="flex items-center gap-2">
-                                  <Mail className="w-3 h-3 text-muted-foreground" />
-                                  <span className="text-xs">{partner.user.email}</span>
+                                  <Phone className="w-3 h-3 text-muted-foreground" />
+                                  <span>{partner.no_telepon}</span>
                                 </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              className={cn(
-                                'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium',
-                                partner.status === 'active'
-                                  ? 'bg-green-100 text-green-700 border border-green-300'
-                                  : 'bg-gray-100 text-gray-700 border border-gray-300'
-                              )}
-                            >
-                              {partner.status === 'active' ? (
-                                <CheckCircle className="w-3 h-3" />
-                              ) : (
-                                <XCircle className="w-3 h-3" />
-                              )}
-                              {partner.status === 'active' ? 'Aktif' : 'Nonaktif'}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                onClick={() => handleToggleStatus(partner.id, partner.status, partner.nama_toko)}
-                                variant="ghost"
-                                size="sm"
+                                {partner.user && (
+                                  <div className="flex items-center gap-2">
+                                    <Mail className="w-3 h-3 text-muted-foreground" />
+                                    <span className="text-xs">{partner.user.email}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span
                                 className={cn(
-                                  "gap-2",
-                                  partner.status === 'active' 
-                                    ? "text-orange-600 hover:text-red-600 hover:bg-red-50"
-                                    : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium',
+                                  partner.status === 'active'
+                                    ? 'bg-green-100 text-green-700 border border-green-300'
+                                    : 'bg-gray-100 text-gray-700 border border-gray-300'
                                 )}
                               >
                                 {partner.status === 'active' ? (
-                                  <>
-                                    <Ban className="w-4 h-4" />
-                                    Nonaktifkan
-                                  </>
+                                  <CheckCircle className="w-3 h-3" />
                                 ) : (
-                                  <>
-                                    <CheckCircle className="w-4 h-4" />
-                                    Aktifkan
-                                  </>
+                                  <XCircle className="w-3 h-3" />
                                 )}
-                              </Button>
-                              <Button
-                                onClick={() => handleDelete(partner.id, partner.nama_toko)}
-                                variant="ghost"
-                                size="sm"
-                                className="gap-2 text-destructive hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Hapus
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                                {partner.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  onClick={() => handleToggleStatus(partner.id, partner.status, partner.nama_toko)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className={cn(
+                                    "gap-2",
+                                    partner.status === 'active' 
+                                      ? "text-orange-600 hover:text-red-600 hover:bg-red-50"
+                                      : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  )}
+                                >
+                                  {partner.status === 'active' ? (
+                                    <><Ban className="w-4 h-4" />Nonaktifkan</>
+                                  ) : (
+                                    <><CheckCircle className="w-4 h-4" />Aktifkan</>
+                                  )}
+                                </Button>
+                                <Button
+                                  onClick={() => handleDelete(partner.id, partner.nama_toko)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="gap-2 text-destructive hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Hapus
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

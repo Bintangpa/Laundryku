@@ -57,6 +57,9 @@ app.use('/api/partners', partnerRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admin', require('./routes/adminRoutes'));
 
+const homepageRoutes = require('./routes/homepageRoutes');
+app.use('/api/homepage', homepageRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);

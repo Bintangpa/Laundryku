@@ -1,10 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Loader2, Sparkles, AlertCircle, Lightbulb } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { OrderTrackingModal } from "@/components/tracking/OrderTrackingModal";
 import { ordersAPI } from "@/lib/api";
 import { TrackingOrder } from "@/types/tracking.types";
+import { homepageAPI } from "@/lib/api";
+
+interface HeroData {
+  badge_text: string;
+  title: string;
+  title_highlight: string;
+  subtitle: string;
+  placeholder_text: string;
+  button_text: string;
+  hint_text: string;
+  tips_text: string;
+}
+
+const defaultHero: HeroData = {
+  badge_text: "Lacak cucianmu dengan mudah",
+  title: "Cek Status",
+  title_highlight: "Laundry Kamu",
+  subtitle: "Masukkan kode laundry untuk mengetahui status cucianmu secara real-time",
+  placeholder_text: "Masukkan kode laundry anda",
+  button_text: "Lacak Pesanan",
+  hint_text: "Kode laundry terdiri dari 3 huruf diikuti dengan angka",
+  tips_text: "Kode laundry bisa ditemukan di struk atau bukti penerimaan laundry Anda",
+};
 
 export function HeroSection() {
   const [code, setCode] = useState("");
@@ -12,6 +35,22 @@ export function HeroSection() {
   const [orderData, setOrderData] = useState<TrackingOrder | null>(null);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [heroData, setHeroData] = useState<HeroData>(defaultHero);
+
+  useEffect(() => {
+    const fetchHero = async () => {
+      try {
+        const response = await homepageAPI.getHero();
+        if (response.data.success) {
+          setHeroData(response.data.data);
+        }
+      } catch (err) {
+        // Fallback ke default jika gagal fetch
+        console.error("Failed to fetch hero data:", err);
+      }
+    };
+    fetchHero();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,20 +64,16 @@ export function HeroSection() {
     setOrderData(null);
 
     try {
-      // Call real API
       const response = await ordersAPI.track(code.trim().toUpperCase());
-      
       if (response.data.success) {
         setOrderData(response.data.data);
         setIsModalOpen(true);
-        setCode(""); // Clear input after success
+        setCode("");
       } else {
         setError(response.data.message || "Kode laundry tidak ditemukan");
       }
     } catch (err: any) {
       console.error("Error tracking order:", err);
-      
-      // Handle different error types
       if (err.response?.status === 404) {
         setError("Kode laundry tidak ditemukan. Pastikan kode yang Anda masukkan benar.");
       } else if (err.response?.data?.message) {
@@ -76,14 +111,14 @@ export function HeroSection() {
             <div className="text-center mb-8 animate-fade-in">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white/90 text-sm font-medium mb-6">
                 <Sparkles className="w-4 h-4" />
-                Lacak cucianmu dengan mudah
+                {heroData.badge_text}
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
-                Cek Status <br className="hidden sm:block" />
-                <span className="text-white/90">Laundry Kamu</span>
+                {heroData.title} <br className="hidden sm:block" />
+                <span className="text-white/90">{heroData.title_highlight}</span>
               </h1>
               <p className="text-lg md:text-xl text-white/80 max-w-lg mx-auto">
-                Masukkan kode laundry untuk mengetahui status cucianmu secara real-time
+                {heroData.subtitle}
               </p>
             </div>
 
@@ -95,11 +130,11 @@ export function HeroSection() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       type="text"
-                      placeholder="Masukkan kode laundry anda"
+                      placeholder={heroData.placeholder_text}
                       value={code}
                       onChange={(e) => {
                         setCode(e.target.value.toUpperCase());
-                        setError(""); // Clear error saat user mengetik
+                        setError("");
                       }}
                       className="pl-12 h-14 text-lg rounded-xl border-2 focus:border-primary uppercase"
                       disabled={isLoading}
@@ -116,7 +151,7 @@ export function HeroSection() {
                         Mencari...
                       </>
                     ) : (
-                      "Lacak Pesanan"
+                      heroData.button_text
                     )}
                   </Button>
                 </div>
@@ -140,7 +175,7 @@ export function HeroSection() {
                 <p className="text-sm text-muted-foreground flex items-start gap-2">
                   <Lightbulb className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                   <span>
-                    <span className="font-medium">Tips:</span> Kode laundry bisa ditemukan di struk atau bukti penerimaan laundry Anda
+                    <span className="font-medium">Tips:</span> {heroData.tips_text}
                   </span>
                 </p>
               </div>
@@ -148,7 +183,7 @@ export function HeroSection() {
 
             {/* Hint text */}
             <p className="text-center text-white/60 text-sm mt-4 animate-fade-in" style={{ animationDelay: "0.4s" }}>
-              Kode laundry terdiri dari 3 huruf diikuti dengan angka
+              {heroData.hint_text}
             </p>
           </div>
         </div>
