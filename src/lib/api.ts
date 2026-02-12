@@ -78,4 +78,10 @@ export const dashboardAPI = {
   getMitraStats: () => api.get('/dashboard/mitra')
 };
 
+// ========== ADMIN API ==========
+export const adminAPI = {
+  updateEmail: (data: any) => api.put('/admin/update-email', data),
+  updatePassword: (data: any) => api.put('/admin/update-password', data)
+};
+
 export default api;

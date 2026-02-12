@@ -156,22 +156,12 @@ export default function AdminDashboard() {
     {
       icon: Users,
       label: 'Kelola Mitra',
-      path: '/admin',
-      active: true
-    },
-    {
-      icon: FileText,
-      label: 'Manajemen Kota',
-      path: '/admin/cities',
-      active: false,
-      badge: 'Soon'
+      path: '/admin'
     },
     {
       icon: Settings,
       label: 'Pengaturan',
-      path: '/admin/settings',
-      active: false,
-      badge: 'Soon'
+      path: '/admin/settings'
     }
   ];
 
@@ -209,31 +199,21 @@ export default function AdminDashboard() {
               <button
                 key={item.path}
                 onClick={() => {
-                  if (item.active) {
-                    navigate(item.path);
-                    setSidebarOpen(false);
-                  }
+                  navigate(item.path);
+                  setSidebarOpen(false);
                 }}
-                disabled={!item.active}
                 className={cn(
                   "w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all",
-                  item.active
-                    ? location.pathname === item.path
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "hover:bg-secondary"
-                    : "opacity-50 cursor-not-allowed"
+                  location.pathname === item.path
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "hover:bg-secondary"
                 )}
               >
                 <div className="flex items-center gap-3">
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
                 </div>
-                {item.badge && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                    {item.badge}
-                  </span>
-                )}
-                {item.active && <ChevronRight className="w-4 h-4" />}
+                <ChevronRight className="w-4 h-4" />
               </button>
             ))}
           </nav>
