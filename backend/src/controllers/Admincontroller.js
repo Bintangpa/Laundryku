@@ -186,3 +186,9 @@ exports.updatePassword = async (req, res) => {
     });
   }
 };
+
+// Export semua functions
+module.exports = {
+  updateEmail: exports.updateEmail,
+  updatePassword: exports.updatePassword
+};

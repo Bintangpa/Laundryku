@@ -11,6 +11,7 @@ import NotFound from '@/pages/NotFound';
 
 // Admin Pages
 import AdminDashboard from '@/pages/admin/Dashboard';
+import AdminSettings from '@/pages/admin/AdminSettings';
 
 // Mitra Pages
 import MitraDashboard from '@/pages/mitra/Dashboard';
@@ -45,6 +46,7 @@ function App() {
           {/* Protected Routes - Admin Only */}
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
           </Route>
 
           {/* 404 Not Found */}

@@ -223,13 +223,13 @@ export default function AdminSettings() {
                     ? "bg-primary text-primary-foreground shadow-md"
                     : item.badge
                     ? "text-muted-foreground cursor-not-allowed opacity-50"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    : "text-foreground hover:bg-primary/10"
                 )}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.badge && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
                     {item.badge}
                   </span>
                 )}
@@ -238,24 +238,17 @@ export default function AdminSettings() {
           </nav>
 
           {/* User Info & Logout */}
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-muted mb-2">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">
-                  {user?.email?.[0]?.toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user?.email}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
-              </div>
+          <div className="p-4 border-t border-border space-y-2">
+            <div className="px-4 py-2 rounded-lg bg-muted/50">
+              <p className="text-xs text-muted-foreground">Logged in as</p>
+              <p className="text-sm font-medium truncate">{user?.email}</p>
             </div>
             <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={handleLogout}
+              variant="ghost"
+              className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
               Logout
             </Button>
           </div>
@@ -263,64 +256,82 @@ export default function AdminSettings() {
       </aside>
 
       {/* Main Content */}
-      <div className="lg:ml-64">
+      <div className="lg:pl-64">
         {/* Mobile Header */}
-        <div className="lg:hidden bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-30">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-          <h1 className="text-lg font-bold">Pengaturan</h1>
-          <div className="w-10" />
+        <div className="lg:hidden sticky top-0 z-30 bg-card border-b border-border p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+              <h1 className="text-lg font-bold">Pengaturan</h1>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="container px-4 py-8 max-w-4xl">
-          {/* Header */}
+        <div className="p-6 lg:p-8 max-w-4xl mx-auto">
           <div className="mb-8">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/admin')}
-              className="mb-4 gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Kembali
-            </Button>
-            <h1 className="text-3xl font-bold text-foreground">Pengaturan Akun</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/admin')}
+                className="hidden lg:flex"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <h1 className="text-3xl font-bold text-foreground hidden lg:block">Pengaturan</h1>
+            </div>
             <p className="text-muted-foreground mt-2">
               Kelola email dan password akun admin Anda
             </p>
           </div>
 
           <div className="space-y-6">
-            {/* Update Email Card */}
+            {/* Single Settings Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-primary" />
-                  Ubah Email
-                </CardTitle>
+                <CardTitle>Pengaturan Akun Admin</CardTitle>
                 <CardDescription>
-                  Perbarui alamat email Anda. Anda akan diminta login kembali setelah mengubah email.
+                  Ubah email dan password akun Anda
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleUpdateEmail} className="space-y-4">
+              <CardContent className="space-y-8">
+                {/* Current Info */}
+                <div className="space-y-4 pb-6 border-b">
+                  <h3 className="font-semibold text-foreground">Informasi Saat Ini</h3>
                   <div className="space-y-2">
-                    <Label htmlFor="email-current-email">Email Saat Ini</Label>
+                    <Label>Email</Label>
                     <Input
-                      id="email-current-email"
                       type="email"
                       value={user?.email || ''}
                       disabled
                       className="bg-muted"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Role</Label>
+                    <Input
+                      type="text"
+                      value="Admin"
+                      disabled
+                      className="bg-muted capitalize"
+                    />
+                  </div>
+                </div>
 
+                {/* Update Email Form */}
+                <form onSubmit={handleUpdateEmail} className="space-y-4 pb-6 border-b">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-primary" />
+                    Ubah Email
+                  </h3>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="email-new">Email Baru</Label>
                     <Input
@@ -331,28 +342,25 @@ export default function AdminSettings() {
                       onChange={(e) =>
                         setEmailForm({ ...emailForm, new_email: e.target.value })
                       }
-                      required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email-password">Konfirmasi Password</Label>
+                    <Label htmlFor="email-password">Password Saat Ini (untuk konfirmasi)</Label>
                     <div className="relative">
-                      <Input
+                      <input
                         id="email-password"
                         type={showEmailPassword ? "text" : "password"}
-                        placeholder="Masukkan password saat ini"
+                        placeholder="Masukkan password"
                         value={emailForm.current_password}
                         onChange={(e) =>
                           setEmailForm({ ...emailForm, current_password: e.target.value })
                         }
-                        required
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-textfield-decoration-container]:pr-0"
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 z-10"
                         onClick={() => setShowEmailPassword(!showEmailPassword)}
                       >
                         {showEmailPassword ? (
@@ -360,7 +368,7 @@ export default function AdminSettings() {
                         ) : (
                           <Eye className="w-4 h-4" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
@@ -373,26 +381,18 @@ export default function AdminSettings() {
                     {emailLoading ? 'Menyimpan...' : 'Ubah Email'}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
 
-            {/* Update Password Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-primary" />
-                  Ubah Password
-                </CardTitle>
-                <CardDescription>
-                  Perbarui password Anda. Anda akan diminta login kembali setelah mengubah password.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                {/* Update Password Form */}
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-primary" />
+                    Ubah Password
+                  </h3>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="password-current">Password Saat Ini</Label>
                     <div className="relative">
-                      <Input
+                      <input
                         id="password-current"
                         type={showCurrentPassword ? "text" : "password"}
                         placeholder="Masukkan password saat ini"
@@ -403,13 +403,11 @@ export default function AdminSettings() {
                             current_password: e.target.value
                           })
                         }
-                        required
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-textfield-decoration-container]:pr-0"
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 z-10"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       >
                         {showCurrentPassword ? (
@@ -417,14 +415,14 @@ export default function AdminSettings() {
                         ) : (
                           <Eye className="w-4 h-4" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="password-new">Password Baru</Label>
                     <div className="relative">
-                      <Input
+                      <input
                         id="password-new"
                         type={showNewPassword ? "text" : "password"}
                         placeholder="Minimal 6 karakter"
@@ -435,13 +433,11 @@ export default function AdminSettings() {
                             new_password: e.target.value
                           })
                         }
-                        required
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-textfield-decoration-container]:pr-0"
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 z-10"
                         onClick={() => setShowNewPassword(!showNewPassword)}
                       >
                         {showNewPassword ? (
@@ -449,14 +445,14 @@ export default function AdminSettings() {
                         ) : (
                           <Eye className="w-4 h-4" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="password-confirm">Konfirmasi Password Baru</Label>
                     <div className="relative">
-                      <Input
+                      <input
                         id="password-confirm"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Ulangi password baru"
@@ -467,13 +463,11 @@ export default function AdminSettings() {
                             confirm_password: e.target.value
                           })
                         }
-                        required
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-credentials-auto-fill-button]:hidden [&::-webkit-textfield-decoration-container]:pr-0"
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 z-10"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? (
@@ -481,7 +475,7 @@ export default function AdminSettings() {
                         ) : (
                           <Eye className="w-4 h-4" />
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
