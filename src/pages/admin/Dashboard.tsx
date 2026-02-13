@@ -274,6 +274,26 @@ export default function AdminDashboard() {
                 </p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => navigate('/')}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">Beranda</span>
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="gap-2 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Keluar</span>
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -355,67 +375,73 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Filter & Search */}
-              <div className="bg-card rounded-2xl border border-border shadow-sm p-5 mb-6">
-                <div className="flex flex-col md:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Cari nama mitra, email, atau telepon..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 h-12"
-                    />
+              {/* ✅ SCROLLABLE CONTAINER - Filter & Table */}
+              <div 
+                className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden" 
+                style={{ maxHeight: 'calc(100vh - 380px)' }}
+              >
+                <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+                  {/* Filter & Search - STICKY di atas table */}
+                  <div className="bg-card border-b border-border p-5 sticky top-0 z-10">
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder="Cari nama mitra, email, atau telepon..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10 h-12"
+                        />
+                      </div>
+
+                      <Select value={selectedCity} onValueChange={setSelectedCity}>
+                        <SelectTrigger className="w-full md:w-[200px] h-12">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-primary" />
+                            <SelectValue placeholder="Semua Kota" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Kota</SelectItem>
+                          {cities.map((city) => (
+                            <SelectItem key={city} value={city}>
+                              {cleanCityName(city)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                        <SelectTrigger className="w-full md:w-[180px] h-12">
+                          <div className="flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-primary" />
+                            <SelectValue placeholder="Semua Status" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua Status</SelectItem>
+                          <SelectItem value="active">Aktif</SelectItem>
+                          <SelectItem value="inactive">Nonaktif</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <p className="text-sm text-muted-foreground">
+                        Menampilkan <span className="font-semibold text-foreground">{partners.length}</span> mitra
+                        {selectedCity !== 'all' && (
+                          <span> di <span className="font-semibold text-primary">{cleanCityName(selectedCity)}</span></span>
+                        )}
+                        {searchQuery && (
+                          <span> untuk "<span className="font-semibold text-foreground">{searchQuery}</span>"</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
 
-                  <Select value={selectedCity} onValueChange={setSelectedCity}>
-                    <SelectTrigger className="w-full md:w-[200px] h-12">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        <SelectValue placeholder="Semua Kota" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Kota</SelectItem>
-                      {cities.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {cleanCityName(city)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="w-full md:w-[180px] h-12">
-                      <div className="flex items-center gap-2">
-                        <Filter className="w-4 h-4 text-primary" />
-                        <SelectValue placeholder="Semua Status" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua Status</SelectItem>
-                      <SelectItem value="active">Aktif</SelectItem>
-                      <SelectItem value="inactive">Nonaktif</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
-                    Menampilkan <span className="font-semibold text-foreground">{partners.length}</span> mitra
-                    {selectedCity !== 'all' && (
-                      <span> di <span className="font-semibold text-primary">{cleanCityName(selectedCity)}</span></span>
-                    )}
-                    {searchQuery && (
-                      <span> untuk "<span className="font-semibold text-foreground">{searchQuery}</span>"</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
+                  {/* Table */}
+                  <div>
                 {loading ? (
                   <div className="flex items-center justify-center py-20">
                     <div className="text-center">
@@ -543,6 +569,8 @@ export default function AdminDashboard() {
                     </Table>
                   </div>
                 )}
+              </div>
+                </div>
               </div>
             </div>
           )}
