@@ -10,7 +10,7 @@ interface Partner {
   alamat: string;
   no_telepon: string;
   kota: string;
-  maps_url?: string | null; // 🆕 Add maps_url
+  maps_url?: string | null;
   status: string;
   created_at?: string;
   updated_at?: string;
@@ -26,6 +26,15 @@ export function PartnersSection({ selectedCity }: PartnersSectionProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ Mapping Jakarta ke semua wilayahnya
+  const JAKARTA_REGIONS = [
+    "Jakarta Pusat",
+    "Jakarta Timur", 
+    "Jakarta Barat",
+    "Jakarta Utara",
+    "Jakarta Selatan"
+  ];
+
   // Fetch partners from API
   useEffect(() => {
     if (!selectedCity) {
@@ -38,8 +47,16 @@ export function PartnersSection({ selectedCity }: PartnersSectionProps) {
       setError(null);
 
       try {
-        // Use the city name directly from the API
-        const response = await partnersAPI.getByCity(selectedCity);
+        let response;
+
+        // ✅ KHUSUS JAKARTA: Fetch dari semua wilayah Jakarta
+        if (selectedCity.toLowerCase() === 'jakarta') {
+          response = await partnersAPI.getByCities(JAKARTA_REGIONS);
+        } 
+        // ✅ Kota lain: Fetch biasa
+        else {
+          response = await partnersAPI.getByCity(selectedCity);
+        }
 
         if (response.data.success) {
           setPartners(response.data.data);
@@ -112,7 +129,7 @@ export function PartnersSection({ selectedCity }: PartnersSectionProps) {
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State - ✅ PERINGATAN MITRA TIDAK DITEMUKAN */}
         {!loading && !error && partners.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 bg-muted/50 rounded-lg">
             <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
@@ -120,7 +137,7 @@ export function PartnersSection({ selectedCity }: PartnersSectionProps) {
               Belum Ada Mitra di {displayCityName}
             </p>
             <p className="text-muted-foreground text-sm">
-              Mitra laundry akan segera hadir di kota ini
+              Mitra laundry belum tersedia di kota ini. Silakan pilih kota lain.
             </p>
           </div>
         )}
@@ -138,7 +155,7 @@ export function PartnersSection({ selectedCity }: PartnersSectionProps) {
                   name={partner.nama_toko}
                   address={partner.alamat}
                   operationalHours="08:00 - 21:00"
-                  mapsUrl={partner.maps_url || undefined} // 🆕 Pass maps_url from database
+                  mapsUrl={partner.maps_url || undefined}
                   phone={partner.no_telepon}
                 />
               </div>

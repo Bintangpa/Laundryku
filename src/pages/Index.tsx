@@ -9,6 +9,11 @@ import { Footer } from "@/components/sections/Footer";
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
+  // ✅ Handle city selection - convert empty string to null for reset
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city === "" ? null : city);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -16,7 +21,7 @@ const Index = () => {
         <HeroSection />
         <CitiesSection
           selectedCity={selectedCity}
-          onCitySelect={setSelectedCity}
+          onCitySelect={handleCitySelect}
         />
         <PartnersSection selectedCity={selectedCity} />
         <div id="services">

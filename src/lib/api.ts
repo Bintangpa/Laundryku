@@ -38,11 +38,35 @@ export const partnersAPI = {
   getByCity: (city: string) => api.get(`/partners/city/${city}`),
   getAvailableCities: () => api.get('/partners/available/cities'),
   
+  // ✅ NEW: Fetch mitra dari multiple cities (khusus Jakarta)
+  getByCities: async (cities: string[]) => {
+    try {
+      // Fetch semua mitra dari multiple cities sekaligus
+      const promises = cities.map(city => api.get(`/partners/city/${city}`));
+      const responses = await Promise.all(promises);
+      
+      // Gabungkan semua data mitra
+      const allPartners = responses.flatMap(response => 
+        response.data.success ? response.data.data : []
+      );
+      
+      // Return format yang sama seperti getByCity
+      return {
+        data: {
+          success: true,
+          data: allPartners
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  },
+  
   // Protected endpoints (require auth)
   getMyProfile: () => api.get('/partners/profile/me'),
   updateMyProfile: (data: any) => api.put('/partners/profile/me', data),
   
-  // ✅ TAMBAH: Admin endpoints
+  // Admin endpoints
   create: (data: any) => api.post('/partners', data),
   update: (id: string, data: any) => api.put(`/partners/${id}`, data),
   delete: (id: string) => api.delete(`/partners/${id}`)

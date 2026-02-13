@@ -24,9 +24,9 @@ export function CityCard({ name, isSelected, onClick }: CityCardProps) {
     <button
       onClick={onClick}
       className={cn(
-        "group relative flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all duration-300",
+        "group relative flex flex-col items-center justify-center p-4 md:p-6 rounded-xl border-2 transition-all duration-300 w-full",
         "bg-card hover:bg-primary/5",
-        "shadow-card hover:shadow-card-hover hover:-translate-y-1",
+        "shadow-sm hover:shadow-md hover:-translate-y-1",
         isSelected
           ? "border-primary bg-primary/5"
           : "border-transparent hover:border-primary/30"
@@ -34,17 +34,17 @@ export function CityCard({ name, isSelected, onClick }: CityCardProps) {
     >
       <div
         className={cn(
-          "w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-colors",
+          "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-2 md:mb-3 transition-colors",
           isSelected
             ? "bg-primary text-primary-foreground"
             : "bg-secondary text-primary group-hover:bg-primary group-hover:text-primary-foreground"
         )}
       >
-        <MapPin className="w-6 h-6" />
+        <MapPin className="w-5 h-5 md:w-6 md:h-6" />
       </div>
       <span
         className={cn(
-          "font-semibold text-card-foreground transition-colors",
+          "font-semibold text-xs md:text-sm text-card-foreground transition-colors text-center",
           isSelected && "text-primary"
         )}
       >
