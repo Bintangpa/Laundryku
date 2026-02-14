@@ -428,14 +428,70 @@ const deletePartner = async (req, res) => {
   }
 };
 
+// 🆕 NEW: Toggle partner active/inactive status (admin only)
+const togglePartnerStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find partner
+    const partner = await Partner.findByPk(id, {
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'email', 'is_active']
+      }]
+    });
+
+    if (!partner) {
+      return res.status(404).json({
+        success: false,
+        message: 'Partner tidak ditemukan.'
+      });
+    }
+
+    // Get current user status
+    const user = partner.user;
+    const newStatus = !user.is_active;
+
+    // Update user is_active status
+    await User.update(
+      { is_active: newStatus },
+      { where: { id: user.id } }
+    );
+
+    // Get updated partner data
+    const updatedPartner = await Partner.findByPk(id, {
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'email', 'is_active']
+      }]
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Partner berhasil ${newStatus ? 'diaktifkan' : 'dinonaktifkan'}!`,
+      data: updatedPartner
+    });
+  } catch (error) {
+    console.error('Toggle partner status error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan saat mengubah status partner.',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 module.exports = {
   getAllPartners,
   getPartnerById,
   getPartnersByCity,
   getAvailableCities,
-  getMyProfile,        // 🆕 Export new function
-  updateMyProfile,     // 🆕 Export new function
+  getMyProfile,
+  updateMyProfile,
   createPartner,
   updatePartner,
-  deletePartner
+  deletePartner,
+  togglePartnerStatus // 🆕 Export new function
 };

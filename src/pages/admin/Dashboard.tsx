@@ -110,14 +110,16 @@ export default function AdminDashboard() {
   };
 
   const handleToggleStatus = async (id: number, currentStatus: string, nama: string) => {
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    const action = newStatus === 'active' ? 'mengaktifkan' : 'menonaktifkan';
+    // 🆕 UPDATE: Gunakan endpoint toggleStatus untuk update user.is_active
+    // Ini akan langsung trigger auto-logout di frontend mitra yang sedang login
+    const isActive = currentStatus === 'active';
+    const action = isActive ? 'menonaktifkan' : 'mengaktifkan';
 
     try {
-      await partnersAPI.update(id.toString(), { status: newStatus });
+      await partnersAPI.toggleStatus(id.toString()); // 🆕 NEW: Pakai endpoint baru
       fetchPartners();
       showToast(
-        `Mitra berhasil ${action === 'mengaktifkan' ? 'diaktifkan' : 'dinonaktifkan'}!`,
+        `Mitra berhasil ${action === 'menonaktifkan' ? 'dinonaktifkan' : 'diaktifkan'}!`,
         'success'
       );
     } catch (error) {
@@ -149,8 +151,8 @@ export default function AdminDashboard() {
       .trim();
   };
 
-  const activePartners = partners.filter(p => p.status === 'active').length;
-  const inactivePartners = partners.filter(p => p.status === 'inactive').length;
+  const activePartners = partners.filter(p => p.user?.is_active).length; // 🆕 UPDATE: Gunakan user.is_active
+  const inactivePartners = partners.filter(p => !p.user?.is_active).length; // 🆕 UPDATE: Gunakan user.is_active
 
   // Menu items — tambah Content Management
   const menuItems = [
@@ -517,36 +519,38 @@ export default function AdminDashboard() {
                               </div>
                             </TableCell>
                             <TableCell>
+                              {/* 🆕 UPDATE: Gunakan user.is_active untuk status */}
                               <span
                                 className={cn(
                                   'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium',
-                                  partner.status === 'active'
+                                  partner.user?.is_active
                                     ? 'bg-green-100 text-green-700 border border-green-300'
                                     : 'bg-gray-100 text-gray-700 border border-gray-300'
                                 )}
                               >
-                                {partner.status === 'active' ? (
+                                {partner.user?.is_active ? (
                                   <CheckCircle className="w-3 h-3" />
                                 ) : (
                                   <XCircle className="w-3 h-3" />
                                 )}
-                                {partner.status === 'active' ? 'Aktif' : 'Nonaktif'}
+                                {partner.user?.is_active ? 'Aktif' : 'Nonaktif'}
                               </span>
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
+                                {/* 🆕 UPDATE: Gunakan user.is_active untuk kondisi button */}
                                 <Button
-                                  onClick={() => handleToggleStatus(partner.id, partner.status, partner.nama_toko)}
+                                  onClick={() => handleToggleStatus(partner.id, partner.user?.is_active ? 'active' : 'inactive', partner.nama_toko)}
                                   variant="ghost"
                                   size="sm"
                                   className={cn(
                                     "gap-2",
-                                    partner.status === 'active' 
+                                    partner.user?.is_active
                                       ? "text-orange-600 hover:text-red-600 hover:bg-red-50"
                                       : "text-green-600 hover:text-green-700 hover:bg-green-50"
                                   )}
                                 >
-                                  {partner.status === 'active' ? (
+                                  {partner.user?.is_active ? (
                                     <><Ban className="w-4 h-4" />Nonaktifkan</>
                                   ) : (
                                     <><CheckCircle className="w-4 h-4" />Aktifkan</>

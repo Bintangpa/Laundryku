@@ -25,6 +25,30 @@ api.interceptors.request.use(
   }
 );
 
+// 🆕 NEW: Response interceptor untuk detect account deactivated
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Check if account is deactivated
+    if (error.response?.status === 403 && 
+        (error.response?.data?.code === 'ACCOUNT_DEACTIVATED' || 
+         error.response?.data?.deactivated === true)) {
+      
+      // Dispatch custom event untuk trigger modal
+      const event = new CustomEvent('account-deactivated', {
+        detail: {
+          message: error.response?.data?.message || 'Akun Anda telah dinonaktifkan'
+        }
+      });
+      window.dispatchEvent(event);
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 // ========== TRACKING API (PUBLIC) ==========
 export const trackingAPI = {
   trackOrder: (code: string) => api.get(`/tracking/${code}`)
@@ -69,6 +93,7 @@ export const partnersAPI = {
   // Admin endpoints
   create: (data: any) => api.post('/partners', data),
   update: (id: string, data: any) => api.put(`/partners/${id}`, data),
+  toggleStatus: (id: string) => api.patch(`/partners/${id}/toggle-status`), // 🆕 NEW: Toggle active/inactive
   delete: (id: string) => api.delete(`/partners/${id}`)
 };
 

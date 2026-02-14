@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { DeactivatedModal } from '@/components/DeactivatedModal'; // 🆕 NEW: Import modal
 
 // Pages
 import Index from '@/pages/Index';
@@ -54,6 +55,7 @@ function App() {
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
+        <DeactivatedModal /> {/* 🆕 NEW: Modal akan muncul saat account deactivated */}
       </Router>
       <Toaster />
     </AuthProvider>

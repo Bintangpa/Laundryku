@@ -19,6 +19,7 @@ router.put('/profile/me', authenticate, partnerController.updateMyProfile);
 router.get('/:id', partnerController.getPartnerById);
 router.post('/', authenticate, isAdmin, partnerController.createPartner);
 router.put('/:id', authenticate, partnerController.updatePartner);
+router.patch('/:id/toggle-status', authenticate, isAdmin, partnerController.togglePartnerStatus); // 🆕 NEW: Toggle active/inactive
 router.delete('/:id', authenticate, isAdmin, partnerController.deletePartner);
 
 module.exports = router;

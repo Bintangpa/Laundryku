@@ -33,7 +33,9 @@ exports.authenticateToken = async (req, res, next) => {
     if (!user.is_active) {
       return res.status(403).json({
         success: false,
-        message: 'Account is inactive'
+        message: 'Account is inactive',
+        code: 'ACCOUNT_DEACTIVATED', // 🆕 Special code untuk frontend
+        deactivated: true // 🆕 Flag untuk frontend
       });
     }
 
