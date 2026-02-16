@@ -95,17 +95,14 @@ export default function EditProfile() {
     setError(null);
     setSuccess(null);
 
-    // Validasi nomor telepon
-    const phoneRegex = /^(08|62)\d{8,11}$/;
-    if (!phoneRegex.test(formData.no_telepon)) {
-      setError('Format nomor telepon tidak valid (contoh: 08123456789)');
-      return;
-    }
-
+    // ✅ FIX: Hapus validasi nomor telepon karena field tidak bisa diedit
     setSaving(true);
 
     try {
-      const response = await partnersAPI.updateMyProfile(formData);
+      // ✅ FIX: Jangan kirim no_telepon ke backend (read-only field)
+      const { no_telepon, ...updateData } = formData;
+      
+      const response = await partnersAPI.updateMyProfile(updateData);
       
       if (response.data.success) {
         setSuccess('Profil berhasil diupdate!');
@@ -261,24 +258,26 @@ export default function EditProfile() {
               )}
             </div>
 
-            {/* No Telepon */}
+            {/* No Telepon - READ ONLY */}
             <div className="space-y-2">
               <Label htmlFor="no_telepon" className="flex items-center gap-2 text-sm font-medium">
                 <Phone className="w-4 h-4 text-primary" />
-                No. Telepon <span className="text-destructive">*</span>
+                No. Telepon 
+                <span className="text-xs text-muted-foreground font-normal">(tidak dapat diubah)</span>
               </Label>
               <Input
                 id="no_telepon"
                 name="no_telepon"
                 type="tel"
-                placeholder="08123456789"
                 value={formData.no_telepon}
-                onChange={handleChange}
-                required
-                disabled={saving}
-                className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
+                disabled={true}
+                readOnly
+                className="h-11 bg-muted/50 cursor-not-allowed opacity-75"
               />
-              
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="w-3 h-3" />
+                Nomor telepon tidak dapat diubah. Hubungi admin jika perlu mengubah nomor.
+              </p>
             </div>
 
             {/* Maps URL */}

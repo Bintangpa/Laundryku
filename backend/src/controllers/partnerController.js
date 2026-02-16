@@ -22,12 +22,17 @@ const getAllPartners = async (req, res) => {
       };
     }
 
+    // 🆕 FIX: Tambah filter user.is_active di include
     const partners = await Partner.findAll({
       where: whereClause,
       include: [{
         model: User,
         as: 'user',
-        attributes: ['id', 'email', 'is_active']
+        attributes: ['id', 'email', 'is_active'],
+        where: {
+          is_active: true // 🆕 FIX: Only show partners with active user accounts
+        },
+        required: false // Keep LEFT JOIN behavior for admin dashboard
       }],
       order: [['nama_toko', 'ASC']]
     });
@@ -92,6 +97,7 @@ const getPartnersByCity = async (req, res) => {
       });
     }
 
+    // 🆕 FIX: Tambah filter user.is_active = true
     // Normalize city name (case-insensitive search)
     const partners = await Partner.findAll({
       where: {
@@ -103,7 +109,10 @@ const getPartnersByCity = async (req, res) => {
       include: [{
         model: User,
         as: 'user',
-        attributes: ['id', 'email', 'is_active']
+        attributes: ['id', 'email', 'is_active'],
+        where: {
+          is_active: true // 🆕 FIX: Only show partners with active user accounts
+        }
       }],
       order: [['nama_toko', 'ASC']]
     });
@@ -125,11 +134,9 @@ const getPartnersByCity = async (req, res) => {
 // Get available cities (cities that have active partners) - PUBLIC
 const getAvailableCities = async (req, res) => {
   try {
-    // Get distinct cities from partners table where status is active
-    const cities = await Partner.findAll({
-      attributes: [
-        [Partner.sequelize.fn('DISTINCT', Partner.sequelize.col('kota')), 'kota']
-      ],
+    // 🆕 FIX: Get distinct cities WITH active user filter
+    const partners = await Partner.findAll({
+      attributes: ['kota'],
       where: {
         status: 'active',
         kota: {
@@ -137,12 +144,21 @@ const getAvailableCities = async (req, res) => {
           [Op.ne]: ''    // Not empty string
         }
       },
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: [],
+        where: {
+          is_active: true // 🆕 FIX: Only cities with active user accounts
+        }
+      }],
+      group: ['kota'],
       raw: true
     });
 
     // Extract city names and format them
-    const cityList = cities
-      .map(c => c.kota)
+    const cityList = partners
+      .map(p => p.kota)
       .filter(city => city && city.trim()) // Remove null/empty
       .sort(); // Sort alphabetically
 
@@ -344,9 +360,9 @@ const updateMyProfile = async (req, res) => {
     const {
       nama_toko,
       alamat,
-      no_telepon,
       kota,
       maps_url
+      // ✅ FIX: Hapus no_telepon dari destructuring - tidak boleh diupdate
     } = req.body;
 
     // Find partner by user_id
@@ -361,13 +377,13 @@ const updateMyProfile = async (req, res) => {
       });
     }
 
-    // Update only provided fields
+    // ✅ FIX: Update only editable fields (TIDAK termasuk no_telepon)
     const updates = {};
     if (nama_toko !== undefined) updates.nama_toko = nama_toko;
     if (alamat !== undefined) updates.alamat = alamat;
-    if (no_telepon !== undefined) updates.no_telepon = no_telepon;
     if (kota !== undefined) updates.kota = kota;
     if (maps_url !== undefined) updates.maps_url = maps_url;
+    // ✅ no_telepon TIDAK di-update
 
     await partner.update(updates);
 

@@ -150,25 +150,17 @@ exports.login = async (req, res) => {
     if (!user.is_active) {
       return res.status(403).json({
         success: false,
-        message: 'Akun Anda tidak aktif. Hubungi admin.'
+        message: 'Akun mitra Anda telah dinonaktifkan oleh admin. Hubungi admin untuk informasi lebih lanjut.'
       });
     }
 
-    // ✅ TAMBAH: Cek status partner jika role mitra
-    if (user.role === 'mitra') {
-      if (!user.partner) {
-        return res.status(403).json({
-          success: false,
-          message: 'Data mitra tidak ditemukan. Hubungi admin.'
-        });
-      }
-
-      if (user.partner.status !== 'active') {
-        return res.status(403).json({
-          success: false,
-          message: 'Akun mitra Anda telah dinonaktifkan oleh admin. Hubungi admin untuk informasi lebih lanjut.'
-        });
-      }
+    // ✅ FIX: Hapus check partner.status, cukup check user.is_active
+    // Karena toggle status hanya update user.is_active
+    if (user.role === 'mitra' && !user.partner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Data mitra tidak ditemukan. Hubungi admin.'
+      });
     }
 
     // Verify password
