@@ -9,8 +9,11 @@ router.get('/track/:kode', orderController.trackOrder);
 // All routes below require authentication
 router.use(authenticate);
 
-// 🆕 Get dashboard stats (mitra only)
+// Get dashboard stats (mitra only)
 router.get('/stats/dashboard', orderController.getDashboardStats);
+
+// Get ALL orders - Admin Only
+router.get('/admin/all', isAdmin, orderController.getAllOrdersAdmin);
 
 // Create new order (mitra only)
 router.post('/', orderController.createOrder);

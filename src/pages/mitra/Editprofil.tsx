@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { partnersAPI } from '@/lib/api';
 import { useKotaIndonesia } from '@/hooks/useKotaIndonesia';
 import { CityCombobox } from '@/components/CityCombobox';
+import { stripCityPrefix } from '@/lib/cityUtils'; // 🆕 Import utility
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -95,12 +96,16 @@ export default function EditProfile() {
     setError(null);
     setSuccess(null);
 
-    // ✅ FIX: Hapus validasi nomor telepon karena field tidak bisa diedit
     setSaving(true);
 
     try {
-      // ✅ FIX: Jangan kirim no_telepon ke backend (read-only field)
+      // Extract no_telepon (read-only field)
       const { no_telepon, ...updateData } = formData;
+      
+      // 🆕 FIX: Strip prefix KABUPATEN/KOTA sebelum kirim ke backend
+      if (updateData.kota) {
+        updateData.kota = stripCityPrefix(updateData.kota);
+      }
       
       const response = await partnersAPI.updateMyProfile(updateData);
       

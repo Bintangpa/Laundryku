@@ -22,9 +22,7 @@ import {
   Menu,
   X,
   Package,
-  FileText,
   Settings,
-  TrendingUp,
   ChevronRight,
   Layout
 } from 'lucide-react';
@@ -110,13 +108,11 @@ export default function AdminDashboard() {
   };
 
   const handleToggleStatus = async (id: number, currentStatus: string, nama: string) => {
-    // 🆕 UPDATE: Gunakan endpoint toggleStatus untuk update user.is_active
-    // Ini akan langsung trigger auto-logout di frontend mitra yang sedang login
     const isActive = currentStatus === 'active';
     const action = isActive ? 'menonaktifkan' : 'mengaktifkan';
 
     try {
-      await partnersAPI.toggleStatus(id.toString()); // 🆕 NEW: Pakai endpoint baru
+      await partnersAPI.toggleStatus(id.toString());
       fetchPartners();
       showToast(
         `Mitra berhasil ${action === 'menonaktifkan' ? 'dinonaktifkan' : 'diaktifkan'}!`,
@@ -151,15 +147,19 @@ export default function AdminDashboard() {
       .trim();
   };
 
-  const activePartners = partners.filter(p => p.user?.is_active).length; // 🆕 UPDATE: Gunakan user.is_active
-  const inactivePartners = partners.filter(p => !p.user?.is_active).length; // 🆕 UPDATE: Gunakan user.is_active
+  const activePartners = partners.filter(p => p.user?.is_active).length;
+  const inactivePartners = partners.filter(p => !p.user?.is_active).length;
 
-  // Menu items — tambah Content Management
   const menuItems = [
     {
       icon: Users,
       label: 'Kelola Mitra',
       path: '/admin'
+    },
+    {
+      icon: Package,
+      label: 'Kelola Order',
+      path: '/admin/orders'
     },
     {
       icon: Layout,
@@ -336,7 +336,7 @@ export default function AdminDashboard() {
           )}
 
           {/* ==================== */}
-          {/* KELOLA MITRA (SAMA)  */}
+          {/* KELOLA MITRA         */}
           {/* ==================== */}
           {!isContentPage && (
             <div>
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* ✅ SCROLLABLE CONTAINER - Filter & Table */}
+              {/* Scrollable Container - Filter & Table */}
               <div 
                 className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden" 
                 style={{ maxHeight: 'calc(100vh - 380px)' }}
@@ -444,136 +444,134 @@ export default function AdminDashboard() {
 
                   {/* Table */}
                   <div>
-                {loading ? (
-                  <div className="flex items-center justify-center py-20">
-                    <div className="text-center">
-                      <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-                      <p className="text-muted-foreground">Memuat data mitra...</p>
-                    </div>
-                  </div>
-                ) : partners.length === 0 ? (
-                  <div className="text-center py-20">
-                    <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
-                      <Users className="w-8 h-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">Tidak Ada Mitra</h3>
-                    <p className="text-muted-foreground mb-4">
-                      {searchQuery || selectedCity !== 'all' 
-                        ? 'Tidak ada mitra yang sesuai dengan filter'
-                        : 'Belum ada mitra yang terdaftar'}
-                    </p>
-                    {(searchQuery || selectedCity !== 'all' || selectedStatus !== 'all') && (
-                      <Button
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSelectedCity('all');
-                          setSelectedStatus('all');
-                        }}
-                        variant="outline"
-                      >
-                        Reset Filter
-                      </Button>
+                    {loading ? (
+                      <div className="flex items-center justify-center py-20">
+                        <div className="text-center">
+                          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
+                          <p className="text-muted-foreground">Memuat data mitra...</p>
+                        </div>
+                      </div>
+                    ) : partners.length === 0 ? (
+                      <div className="text-center py-20">
+                        <div className="w-16 h-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+                          <Users className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">Tidak Ada Mitra</h3>
+                        <p className="text-muted-foreground mb-4">
+                          {searchQuery || selectedCity !== 'all' 
+                            ? 'Tidak ada mitra yang sesuai dengan filter'
+                            : 'Belum ada mitra yang terdaftar'}
+                        </p>
+                        {(searchQuery || selectedCity !== 'all' || selectedStatus !== 'all') && (
+                          <Button
+                            onClick={() => {
+                              setSearchQuery('');
+                              setSelectedCity('all');
+                              setSelectedStatus('all');
+                            }}
+                            variant="outline"
+                          >
+                            Reset Filter
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="w-[50px]">No</TableHead>
+                              <TableHead>Nama Toko</TableHead>
+                              <TableHead>Kota</TableHead>
+                              <TableHead>Kontak</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {partners.map((partner, index) => (
+                              <TableRow key={partner.id}>
+                                <TableCell className="font-medium">{index + 1}</TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{partner.nama_toko}</p>
+                                    <p className="text-xs text-muted-foreground">{partner.alamat}</p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-primary" />
+                                    <span>{cleanCityName(partner.kota || '-')}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="space-y-1 text-sm">
+                                    <div className="flex items-center gap-2">
+                                      <Phone className="w-3 h-3 text-muted-foreground" />
+                                      <span>{partner.no_telepon}</span>
+                                    </div>
+                                    {partner.user && (
+                                      <div className="flex items-center gap-2">
+                                        <Mail className="w-3 h-3 text-muted-foreground" />
+                                        <span className="text-xs">{partner.user.email}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <span
+                                    className={cn(
+                                      'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium',
+                                      partner.user?.is_active
+                                        ? 'bg-green-100 text-green-700 border border-green-300'
+                                        : 'bg-gray-100 text-gray-700 border border-gray-300'
+                                    )}
+                                  >
+                                    {partner.user?.is_active ? (
+                                      <CheckCircle className="w-3 h-3" />
+                                    ) : (
+                                      <XCircle className="w-3 h-3" />
+                                    )}
+                                    {partner.user?.is_active ? 'Aktif' : 'Nonaktif'}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Button
+                                      onClick={() => handleToggleStatus(partner.id, partner.user?.is_active ? 'active' : 'inactive', partner.nama_toko)}
+                                      variant="ghost"
+                                      size="sm"
+                                      className={cn(
+                                        "gap-2",
+                                        partner.user?.is_active
+                                          ? "text-orange-600 hover:text-red-600 hover:bg-red-50"
+                                          : "text-green-600 hover:text-green-700 hover:bg-green-50"
+                                      )}
+                                    >
+                                      {partner.user?.is_active ? (
+                                        <><Ban className="w-4 h-4" />Nonaktifkan</>
+                                      ) : (
+                                        <><CheckCircle className="w-4 h-4" />Aktifkan</>
+                                      )}
+                                    </Button>
+                                    <Button
+                                      onClick={() => handleDelete(partner.id, partner.nama_toko)}
+                                      variant="ghost"
+                                      size="sm"
+                                      className="gap-2 text-destructive hover:text-red-700 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Hapus
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     )}
                   </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[50px]">No</TableHead>
-                          <TableHead>Nama Toko</TableHead>
-                          <TableHead>Kota</TableHead>
-                          <TableHead>Kontak</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {partners.map((partner, index) => (
-                          <TableRow key={partner.id}>
-                            <TableCell className="font-medium">{index + 1}</TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{partner.nama_toko}</p>
-                                <p className="text-xs text-muted-foreground">{partner.alamat}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-primary" />
-                                <span>{cleanCityName(partner.kota || '-')}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="space-y-1 text-sm">
-                                <div className="flex items-center gap-2">
-                                  <Phone className="w-3 h-3 text-muted-foreground" />
-                                  <span>{partner.no_telepon}</span>
-                                </div>
-                                {partner.user && (
-                                  <div className="flex items-center gap-2">
-                                    <Mail className="w-3 h-3 text-muted-foreground" />
-                                    <span className="text-xs">{partner.user.email}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {/* 🆕 UPDATE: Gunakan user.is_active untuk status */}
-                              <span
-                                className={cn(
-                                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium',
-                                  partner.user?.is_active
-                                    ? 'bg-green-100 text-green-700 border border-green-300'
-                                    : 'bg-gray-100 text-gray-700 border border-gray-300'
-                                )}
-                              >
-                                {partner.user?.is_active ? (
-                                  <CheckCircle className="w-3 h-3" />
-                                ) : (
-                                  <XCircle className="w-3 h-3" />
-                                )}
-                                {partner.user?.is_active ? 'Aktif' : 'Nonaktif'}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {/* 🆕 UPDATE: Gunakan user.is_active untuk kondisi button */}
-                                <Button
-                                  onClick={() => handleToggleStatus(partner.id, partner.user?.is_active ? 'active' : 'inactive', partner.nama_toko)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className={cn(
-                                    "gap-2",
-                                    partner.user?.is_active
-                                      ? "text-orange-600 hover:text-red-600 hover:bg-red-50"
-                                      : "text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  )}
-                                >
-                                  {partner.user?.is_active ? (
-                                    <><Ban className="w-4 h-4" />Nonaktifkan</>
-                                  ) : (
-                                    <><CheckCircle className="w-4 h-4" />Aktifkan</>
-                                  )}
-                                </Button>
-                                <Button
-                                  onClick={() => handleDelete(partner.id, partner.nama_toko)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="gap-2 text-destructive hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Hapus
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </div>
                 </div>
               </div>
             </div>

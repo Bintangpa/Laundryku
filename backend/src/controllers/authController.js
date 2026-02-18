@@ -2,6 +2,25 @@ const jwt = require('jsonwebtoken');
 const { User, Partner } = require('../models');
 
 /**
+ * 🆕 Strip prefix "KABUPATEN" atau "KOTA" dari nama kota
+ * Safety net jika frontend lupa strip
+ */
+const stripCityPrefix = (cityName) => {
+  if (!cityName) return '';
+  
+  const trimmed = cityName.trim();
+  const prefixes = ['KABUPATEN ', 'KOTA ', 'KAB. ', 'KAB ', 'Kabupaten ', 'Kota '];
+  
+  for (const prefix of prefixes) {
+    if (trimmed.toUpperCase().startsWith(prefix.toUpperCase())) {
+      return trimmed.substring(prefix.length).trim().toUpperCase();
+    }
+  }
+  
+  return trimmed.toUpperCase();
+};
+
+/**
  * Generate JWT Token
  */
 const generateToken = (userId) => {
@@ -68,13 +87,16 @@ exports.register = async (req, res) => {
       role: 'mitra'
     });
 
+    // 🆕 FIX: Strip prefix dari kota sebelum save ke database
+    const cleanedKota = kota ? stripCityPrefix(kota) : null;
+
     // Buat data partner
     const partner = await Partner.create({
       user_id: user.id,
       nama_toko,
       alamat,
       no_telepon,
-      kota,
+      kota: cleanedKota, // 🆕 Simpan kota tanpa prefix
       status: 'active'
     });
 

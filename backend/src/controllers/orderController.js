@@ -162,6 +162,67 @@ exports.getAllOrders = async (req, res) => {
 };
 
 /**
+ * Get ALL Orders - Admin Only
+ * Bisa lihat semua order dari semua mitra
+ */
+exports.getAllOrdersAdmin = async (req, res) => {
+  try {
+    const { status, status_pembayaran, search, limit = 200, offset = 0 } = req.query;
+
+    const whereClause = {};
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    if (status_pembayaran) {
+      whereClause.status_pembayaran = status_pembayaran;
+    }
+
+    if (search) {
+      whereClause[Op.or] = [
+        { kode_laundry: { [Op.like]: `%${search}%` } }
+      ];
+    }
+
+    const orders = await Order.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['nama', 'no_wa', 'alamat']
+        },
+        {
+          model: Partner,
+          as: 'partner',
+          attributes: ['nama_toko', 'no_telepon', 'kota', 'alamat']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({
+      success: true,
+      data: orders.rows,
+      total: orders.count,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+  } catch (error) {
+    console.error('Error fetching all orders (admin):', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+/**
  * Get Order By ID
  */
 exports.getOrderById = async (req, res) => {
@@ -219,7 +280,6 @@ exports.updateOrderStatus = async (req, res) => {
     const { id } = req.params;
     const { status, keterangan } = req.body;
 
-    // ✅ CHANGED: 'Selesai' → 'Telah Diambil'
     const validStatus = [
       'Diterima',
       'Sedang Dicuci',
@@ -254,20 +314,16 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // ✅ CHANGED: Update status order - 'Selesai' → 'Telah Diambil'
     await order.update({ 
       status,
       tanggal_selesai: status === 'Telah Diambil' ? new Date() : order.tanggal_selesai
     });
 
-    // âœ… UBAH: UPDATE history yang sudah ada (bukan INSERT baru)
-    // Cari history record untuk order ini
     const existingHistory = await OrderStatusHistory.findOne({
       where: { order_id: id }
     });
 
     if (existingHistory) {
-      // UPDATE record yang sudah ada
       await existingHistory.update({
         status,
         keterangan: keterangan || `Status diubah menjadi ${status}`,
@@ -275,7 +331,6 @@ exports.updateOrderStatus = async (req, res) => {
         updated_at: new Date()
       });
     } else {
-      // Jika tidak ada history (edge case), baru INSERT
       await OrderStatusHistory.create({
         order_id: id,
         status,
@@ -284,7 +339,6 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Fetch updated order
     const updatedOrder = await Order.findByPk(id, {
       include: [
         { model: Customer, as: 'customer' },
@@ -335,10 +389,8 @@ exports.updateOrder = async (req, res) => {
       });
     }
 
-    // Update order
     await order.update(updateData);
 
-    // Fetch updated order
     const updatedOrder = await Order.findByPk(id, {
       include: [
         { model: Customer, as: 'customer' },
@@ -387,10 +439,7 @@ exports.deleteOrder = async (req, res) => {
       });
     }
 
-    // Hapus history terlebih dahulu
     await OrderStatusHistory.destroy({ where: { order_id: id } });
-    
-    // Hapus order
     await order.destroy();
 
     res.json({
@@ -463,7 +512,6 @@ exports.trackOrder = async (req, res) => {
  */
 exports.getDashboardStats = async (req, res) => {
   try {
-    // Get partner_id dari user yang login
     const partner = await Partner.findOne({ where: { user_id: req.user.id } });
     
     if (!partner) {
@@ -476,27 +524,20 @@ exports.getDashboardStats = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Total order hari ini
     const todayOrders = await Order.count({
       where: {
         partner_id: partner.id,
-        tanggal_masuk: {
-          [Op.gte]: today
-        }
+        tanggal_masuk: { [Op.gte]: today }
       }
     });
 
-    // ✅ CHANGED: Order aktif - 'Selesai' → 'Telah Diambil'
     const activeOrders = await Order.count({
       where: {
         partner_id: partner.id,
-        status: {
-          [Op.ne]: 'Telah Diambil'
-        }
+        status: { [Op.ne]: 'Telah Diambil' }
       }
     });
 
-    // Order siap diambil
     const readyOrders = await Order.count({
       where: {
         partner_id: partner.id,
@@ -504,19 +545,15 @@ exports.getDashboardStats = async (req, res) => {
       }
     });
 
-    // Total pendapatan bulan ini (opsional)
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const monthlyRevenue = await Order.sum('total_harga', {
       where: {
         partner_id: partner.id,
         status_pembayaran: 'Lunas',
-        tanggal_masuk: {
-          [Op.gte]: startOfMonth
-        }
+        tanggal_masuk: { [Op.gte]: startOfMonth }
       }
     });
 
-    // Recent orders (5 terakhir)
     const recentOrders = await Order.findAll({
       where: { partner_id: partner.id },
       include: [{ model: Customer, as: 'customer' }],

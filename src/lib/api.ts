@@ -25,18 +25,15 @@ api.interceptors.request.use(
   }
 );
 
-// 🆕 NEW: Response interceptor untuk detect account deactivated
+// Response interceptor untuk detect account deactivated
 api.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Check if account is deactivated
     if (error.response?.status === 403 && 
         (error.response?.data?.code === 'ACCOUNT_DEACTIVATED' || 
          error.response?.data?.deactivated === true)) {
-      
-      // Dispatch custom event untuk trigger modal
       const event = new CustomEvent('account-deactivated', {
         detail: {
           message: error.response?.data?.message || 'Akun Anda telah dinonaktifkan'
@@ -44,7 +41,6 @@ api.interceptors.response.use(
       });
       window.dispatchEvent(event);
     }
-    
     return Promise.reject(error);
   }
 );
@@ -62,19 +58,13 @@ export const partnersAPI = {
   getByCity: (city: string) => api.get(`/partners/city/${city}`),
   getAvailableCities: () => api.get('/partners/available/cities'),
   
-  // ✅ NEW: Fetch mitra dari multiple cities (khusus Jakarta)
   getByCities: async (cities: string[]) => {
     try {
-      // Fetch semua mitra dari multiple cities sekaligus
       const promises = cities.map(city => api.get(`/partners/city/${city}`));
       const responses = await Promise.all(promises);
-      
-      // Gabungkan semua data mitra
       const allPartners = responses.flatMap(response => 
         response.data.success ? response.data.data : []
       );
-      
-      // Return format yang sama seperti getByCity
       return {
         data: {
           success: true,
@@ -93,7 +83,7 @@ export const partnersAPI = {
   // Admin endpoints
   create: (data: any) => api.post('/partners', data),
   update: (id: string, data: any) => api.put(`/partners/${id}`, data),
-  toggleStatus: (id: string) => api.patch(`/partners/${id}/toggle-status`), // 🆕 NEW: Toggle active/inactive
+  toggleStatus: (id: string) => api.patch(`/partners/${id}/toggle-status`),
   delete: (id: string) => api.delete(`/partners/${id}`)
 };
 
@@ -108,6 +98,9 @@ export const authAPI = {
 export const ordersAPI = {
   // Dashboard stats
   getDashboardStats: () => api.get('/orders/stats/dashboard'),
+
+  // Admin - get semua order dari semua mitra
+  getAllAdmin: (params?: any) => api.get('/orders/admin/all', { params }),
   
   // CRUD operations
   getAll: (params?: any) => api.get('/orders', { params }),

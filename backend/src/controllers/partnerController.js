@@ -1,6 +1,25 @@
 const { Partner, User } = require('../models');
 const { Op } = require('sequelize');
 
+/**
+ * 🆕 Strip prefix "KABUPATEN" atau "KOTA" dari nama kota
+ * Safety net jika frontend lupa strip
+ */
+const stripCityPrefix = (cityName) => {
+  if (!cityName) return '';
+  
+  const trimmed = cityName.trim();
+  const prefixes = ['KABUPATEN ', 'KOTA ', 'KAB. ', 'KAB ', 'Kabupaten ', 'Kota '];
+  
+  for (const prefix of prefixes) {
+    if (trimmed.toUpperCase().startsWith(prefix.toUpperCase())) {
+      return trimmed.substring(prefix.length).trim().toUpperCase();
+    }
+  }
+  
+  return trimmed.toUpperCase();
+};
+
 // Get all partners (with city filter) - PUBLIC
 const getAllPartners = async (req, res) => {
   try {
@@ -97,21 +116,24 @@ const getPartnersByCity = async (req, res) => {
       });
     }
 
-    // 🆕 FIX: Tambah filter user.is_active = true
-    // Normalize city name (case-insensitive search)
+    // ✅ FIX: Case-insensitive search dengan LOWER() dan specify table alias
+    const normalizedCity = city.trim().toLowerCase();
+
+    // ✅ FIX: Pakai Sequelize.literal dengan table alias yang jelas
     const partners = await Partner.findAll({
       where: {
-        kota: {
-          [Op.like]: `%${city}%`
-        },
-        status: 'active' // Only show active partners
+        [Op.and]: [
+          // Case-insensitive search: LOWER(Partner.kota) LIKE '%city%'
+          Partner.sequelize.literal(`LOWER(\`Partner\`.\`kota\`) LIKE '%${normalizedCity}%'`),
+          { status: 'active' } // Only show active partners
+        ]
       },
       include: [{
         model: User,
         as: 'user',
         attributes: ['id', 'email', 'is_active'],
         where: {
-          is_active: true // 🆕 FIX: Only show partners with active user accounts
+          is_active: true // ✅ Only show partners with active user accounts
         }
       }],
       order: [['nama_toko', 'ASC']]
@@ -249,14 +271,17 @@ const createPartner = async (req, res) => {
       is_active: true
     });
 
+    // 🆕 FIX: Strip prefix dari kota sebelum save
+    const cleanedKota = kota ? stripCityPrefix(kota) : null;
+
     // Create partner
     const partner = await Partner.create({
       user_id: user.id,
       nama_toko,
       alamat,
       no_telepon,
-      kota: kota || null,
-      maps_url: maps_url || null, // 🆕 Save maps_url
+      kota: cleanedKota, // 🆕 Simpan kota tanpa prefix
+      maps_url: maps_url || null,
       status: 'active'
     });
 
@@ -320,13 +345,16 @@ const updatePartner = async (req, res) => {
       }
     }
 
+    // 🆕 FIX: Strip prefix dari kota sebelum update
+    const cleanedKota = kota !== undefined ? (kota ? stripCityPrefix(kota) : null) : partner.kota;
+
     // Update partner
     await partner.update({
       nama_toko: nama_toko || partner.nama_toko,
       alamat: alamat || partner.alamat,
       no_telepon: no_telepon || partner.no_telepon,
-      kota: kota !== undefined ? kota : partner.kota,
-      maps_url: maps_url !== undefined ? maps_url : partner.maps_url, // 🆕 Update maps_url
+      kota: cleanedKota, // 🆕 Update kota tanpa prefix
+      maps_url: maps_url !== undefined ? maps_url : partner.maps_url,
       status: status || partner.status
     });
 
@@ -377,13 +405,13 @@ const updateMyProfile = async (req, res) => {
       });
     }
 
-    // ✅ FIX: Update only editable fields (TIDAK termasuk no_telepon)
+    // Update only editable fields (TIDAK termasuk no_telepon)
     const updates = {};
     if (nama_toko !== undefined) updates.nama_toko = nama_toko;
     if (alamat !== undefined) updates.alamat = alamat;
-    if (kota !== undefined) updates.kota = kota;
+    if (kota !== undefined) updates.kota = kota ? stripCityPrefix(kota) : null; // 🆕 Strip prefix
     if (maps_url !== undefined) updates.maps_url = maps_url;
-    // ✅ no_telepon TIDAK di-update
+    // no_telepon TIDAK di-update
 
     await partner.update(updates);
 
