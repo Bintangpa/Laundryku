@@ -31,9 +31,7 @@ import { id as idLocale } from 'date-fns/locale';
 // ✅ CHANGED: 'Selesai' → 'Telah Diambil'
 const STATUS_OPTIONS = [
   'Diterima',
-  'Sedang Dicuci',
-  'Sedang Dikeringkan',
-  'Sedang Disetrika',
+  'Diproses',
   'Siap Diambil',
   'Telah Diambil',
 ];
@@ -42,9 +40,7 @@ const STATUS_OPTIONS = [
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     'Diterima': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    'Sedang Dicuci': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    'Sedang Dikeringkan': 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-    'Sedang Disetrika': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+    'Diproses': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
     'Siap Diambil': 'bg-green-500/10 text-green-500 border-green-500/20',
     'Telah Diambil': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
   };
@@ -62,6 +58,7 @@ export default function OrderDetail() {
 
   const [newStatus, setNewStatus] = useState('');
   const [keterangan, setKeterangan] = useState('');
+  const [updatingPayment, setUpdatingPayment] = useState(false);
 
   useEffect(() => {
     fetchOrder();
@@ -112,6 +109,28 @@ export default function OrderDetail() {
       setError(err.response?.data?.message || 'Gagal update status');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleUpdatePembayaran = async (newPembayaran: string) => {
+    try {
+      setUpdatingPayment(true);
+      setError(null);
+      setSuccess(null);
+
+      const response = await ordersAPI.update(id!, {
+        status_pembayaran: newPembayaran,
+      });
+
+      if (response.data.success) {
+        setSuccess(`Status pembayaran diubah menjadi ${newPembayaran}!`);
+        fetchOrder();
+      }
+    } catch (err: any) {
+      console.error('Error updating payment:', err);
+      setError(err.response?.data?.message || 'Gagal update pembayaran');
+    } finally {
+      setUpdatingPayment(false);
     }
   };
 
@@ -313,7 +332,7 @@ export default function OrderDetail() {
                 <DollarSign className="w-5 h-5 text-primary" />
                 Pembayaran
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Harga</p>
                   <p className="text-xl font-bold text-primary">
@@ -322,25 +341,61 @@ export default function OrderDetail() {
                 </div>
                 {order?.metode_pembayaran && (
                   <div>
-                    <p className="text-sm text-muted-foreground">
-                      Metode Pembayaran
-                    </p>
+                    <p className="text-sm text-muted-foreground">Metode Pembayaran</p>
                     <p className="font-medium">{order.metode_pembayaran}</p>
                   </div>
                 )}
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Status Pembayaran
-                  </p>
-                  <Badge
-                    variant={
+                {/* Status Pembayaran + Tombol Update */}
+                <div className="pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground mb-2">Status Pembayaran</p>
+                  <div className={
+                    `flex items-center gap-3 p-3 rounded-xl border-2 ${
                       order?.status_pembayaran === 'Lunas'
-                        ? 'default'
-                        : 'outline'
-                    }
-                  >
-                    {order?.status_pembayaran}
-                  </Badge>
+                        ? 'bg-green-500/5 border-green-500/30'
+                        : 'bg-red-500/5 border-red-500/30'
+                    }`
+                  }>
+                    <div className={
+                      `w-3 h-3 rounded-full ${
+                        order?.status_pembayaran === 'Lunas' ? 'bg-green-500' : 'bg-red-500'
+                      }`
+                    } />
+                    <span className={
+                      `font-semibold text-sm ${
+                        order?.status_pembayaran === 'Lunas' ? 'text-green-600' : 'text-red-600'
+                      }`
+                    }>
+                      {order?.status_pembayaran}
+                    </span>
+                  </div>
+
+                  {/* Toggle Button */}
+                  {order?.status_pembayaran === 'Belum Lunas' ? (
+                    <Button
+                      onClick={() => handleUpdatePembayaran('Lunas')}
+                      disabled={updatingPayment}
+                      className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white gap-2"
+                    >
+                      {updatingPayment ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Mengupdate...</>
+                      ) : (
+                        <><CheckCircle className="w-4 h-4" /> Tandai Lunas</>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => handleUpdatePembayaran('Belum Lunas')}
+                      disabled={updatingPayment}
+                      variant="outline"
+                      className="w-full mt-3 text-red-500 border-red-300 hover:bg-red-50 hover:text-red-500 gap-2"
+                    >
+                      {updatingPayment ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Mengupdate...</>
+                      ) : (
+                        'Batalkan Lunas'
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

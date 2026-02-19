@@ -28,7 +28,8 @@ import {
   Eye,
   EyeOff,
   ChevronRight,
-  UserCheck
+  UserCheck,
+  Package
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -64,6 +65,12 @@ export default function AdminSettings() {
       icon: Users,
       label: 'Kelola Mitra',
       path: '/admin',
+      active: false
+    },
+    {
+      icon: Package,
+      label: 'Kelola Order',
+      path: '/admin/orders',
       active: false
     },
     {

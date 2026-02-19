@@ -40,6 +40,7 @@ interface Order {
   jenis_layanan: string;
   total_harga: number;
   status: string;
+  status_pembayaran: string;
   tanggal_masuk: string;
   customer: {
     nama: string;
@@ -51,9 +52,7 @@ interface Order {
 const STATUS_OPTIONS = [
   { value: 'all', label: 'Semua Status' },
   { value: 'Diterima', label: 'Diterima' },
-  { value: 'Sedang Dicuci', label: 'Sedang Dicuci' },
-  { value: 'Sedang Dikeringkan', label: 'Sedang Dikeringkan' },
-  { value: 'Sedang Disetrika', label: 'Sedang Disetrika' },
+  { value: 'Diproses', label: 'Diproses' },
   { value: 'Siap Diambil', label: 'Siap Diambil' },
   { value: 'Telah Diambil', label: 'Telah Diambil' },
 ];
@@ -62,9 +61,7 @@ const STATUS_OPTIONS = [
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     'Diterima': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    'Sedang Dicuci': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    'Sedang Dikeringkan': 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-    'Sedang Disetrika': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+    'Diproses': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
     'Siap Diambil': 'bg-green-500/10 text-green-500 border-green-500/20',
     'Telah Diambil': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
   };
@@ -286,13 +283,14 @@ Terima kasih.`;
                     <TableHead>Layanan</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Pembayaran</TableHead>
                     <TableHead>Tanggal</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
+                    <TableRow key={order.id} className="cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => navigate(`/dashboard/mitra/orders/${order.id}`)}>
                       <TableCell className="font-mono font-semibold text-primary">
                         {order.kode_laundry}
                       </TableCell>
@@ -318,13 +316,23 @@ Terima kasih.`;
                           {order.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                          order.status_pembayaran === 'Lunas'
+                            ? 'bg-green-500/10 text-green-600 border-green-500/20'
+                            : 'bg-red-500/10 text-red-500 border-red-500/20'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${order.status_pembayaran === 'Lunas' ? 'bg-green-500' : 'bg-red-500'}`} />
+                          {order.status_pembayaran || 'Belum Lunas'}
+                        </span>
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
                           locale: id,
                         })}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -416,6 +424,17 @@ Terima kasih.`;
                         {format(new Date(order.tanggal_masuk), 'dd MMM yyyy', {
                           locale: id,
                         })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Pembayaran:</span>
+                      <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                        order.status_pembayaran === 'Lunas'
+                          ? 'bg-green-500/10 text-green-600 border-green-500/20'
+                          : 'bg-red-500/10 text-red-500 border-red-500/20'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${order.status_pembayaran === 'Lunas' ? 'bg-green-500' : 'bg-red-500'}`} />
+                        {order.status_pembayaran || 'Belum Lunas'}
                       </span>
                     </div>
                   </div>

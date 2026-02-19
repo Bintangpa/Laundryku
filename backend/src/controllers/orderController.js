@@ -181,7 +181,9 @@ exports.getAllOrdersAdmin = async (req, res) => {
 
     if (search) {
       whereClause[Op.or] = [
-        { kode_laundry: { [Op.like]: `%${search}%` } }
+        { kode_laundry: { [Op.like]: `%${search}%` } },
+        { '$customer.nama$': { [Op.like]: `%${search}%` } },
+        { '$partner.nama_toko$': { [Op.like]: `%${search}%` } }
       ];
     }
 
@@ -201,7 +203,8 @@ exports.getAllOrdersAdmin = async (req, res) => {
       ],
       order: [['created_at', 'DESC']],
       limit: parseInt(limit),
-      offset: parseInt(offset)
+      offset: parseInt(offset),
+      subQuery: false
     });
 
     res.json({
@@ -282,9 +285,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     const validStatus = [
       'Diterima',
-      'Sedang Dicuci',
-      'Sedang Dikeringkan',
-      'Sedang Disetrika',
+      'Diproses',
       'Siap Diambil',
       'Telah Diambil'
     ];

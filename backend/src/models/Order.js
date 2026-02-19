@@ -60,11 +60,9 @@ const Order = sequelize.define('Order', {
   status: {
     type: DataTypes.ENUM(
       'Diterima',
-      'Sedang Dicuci',
-      'Sedang Dikeringkan',
-      'Sedang Disetrika',
+      'Diproses',
       'Siap Diambil',
-      'Telah Diambil'  // ✅ CHANGED: 'Selesai' → 'Telah Diambil'
+      'Telah Diambil'
     ),
     defaultValue: 'Diterima'
   },

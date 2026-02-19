@@ -57,10 +57,8 @@ export interface TrackingResponse {
 // ✅ FIXED: Status types - 'Selesai' → 'Telah Diambil'
 export type OrderStatus = 
   | 'Diterima'
-  | 'Sedang Dicuci'
-  | 'Sedang Dikeringkan'
-  | 'Sedang Disetrika'
+  | 'Diproses'
   | 'Siap Diambil'
-  | 'Telah Diambil';  // ← CHANGED dari 'Selesai'
+  | 'Telah Diambil';
 
 export type PaymentStatus = 'Belum Lunas' | 'Lunas';

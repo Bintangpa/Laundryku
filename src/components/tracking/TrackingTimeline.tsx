@@ -12,9 +12,7 @@ interface TrackingTimelineProps {
 // ✅ Urutan status yang benar
 const STATUS_FLOW: OrderStatus[] = [
   'Diterima',
-  'Sedang Dicuci',
-  'Sedang Dikeringkan',
-  'Sedang Disetrika',
+  'Diproses',
   'Siap Diambil',
   'Telah Diambil'
 ];
@@ -22,9 +20,7 @@ const STATUS_FLOW: OrderStatus[] = [
 // 🎨 Warna yang lebih baik - Siap Diambil: amber, Telah Diambil: green
 const STATUS_CONFIG = {
   'Diterima': { color: 'bg-blue-500', label: 'Diterima' },
-  'Sedang Dicuci': { color: 'bg-cyan-500', label: 'Sedang Dicuci' },
-  'Sedang Dikeringkan': { color: 'bg-orange-500', label: 'Sedang Dikeringkan' },
-  'Sedang Disetrika': { color: 'bg-purple-500', label: 'Sedang Disetrika' },
+  'Diproses': { color: 'bg-yellow-500', label: 'Diproses' },
   'Siap Diambil': { color: 'bg-amber-500', label: 'Siap Diambil' },
   'Telah Diambil': { color: 'bg-green-600', label: 'Telah Diambil' }
 };

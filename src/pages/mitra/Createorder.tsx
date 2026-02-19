@@ -25,6 +25,8 @@ import {
   Calculator,
   Calendar,
   Package,
+  Copy,
+  X,
 } from 'lucide-react';
 
 const JENIS_LAYANAN = [
@@ -42,6 +44,8 @@ export default function CreateOrder() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [formData, setFormData] = useState({
     // Customer data
@@ -137,6 +141,7 @@ export default function CreateOrder() {
         const kodeTracking = response.data.data.kode_laundry;
         setGeneratedCode(kodeTracking);
         setSuccess(`Order berhasil dibuat! Kode tracking: ${kodeTracking}`);
+        setShowSuccessModal(true);
 
         // Reset form
         setFormData({
@@ -208,25 +213,60 @@ export default function CreateOrder() {
             </div>
           )}
 
-          {success && (
-            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-start gap-3 shadow-md animate-in fade-in slide-in-from-top-2 duration-300">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-green-500 font-medium">Berhasil!</p>
-                <p className="text-green-500/80 text-sm">{success}</p>
-                {generatedCode && (
-                  <div className="mt-3 p-4 bg-green-500/5 rounded-xl border border-green-500/20">
-                    <p className="text-xs text-green-600 mb-2 font-medium flex items-center gap-2">
-                      <Package className="w-3 h-3" />
-                      Kode Tracking:
-                    </p>
-                    <p className="text-2xl font-bold text-green-600 tracking-wider font-mono">
-                      {generatedCode}
-                    </p>
+          {/* Success Modal */}
+          {showSuccessModal && generatedCode && (
+            <>
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={() => { setShowSuccessModal(false); navigate('/dashboard/mitra/orders'); }} />
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="bg-card rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center animate-in fade-in zoom-in-95 duration-300">
+                  {/* Icon */}
+                  <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-10 h-10 text-green-500" />
                   </div>
-                )}
+
+                  {/* Title */}
+                  <h2 className="text-2xl font-bold text-foreground mb-2">Order Berhasil!</h2>
+                  <p className="text-muted-foreground text-sm mb-6">Pesanan customer telah berhasil diinput</p>
+
+                  {/* Kode Laundry */}
+                  <div className="bg-green-500/5 border-2 border-green-500/20 rounded-2xl p-5 mb-6">
+                    <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Kode Tracking</p>
+                    <p className="text-3xl font-bold text-green-600 font-mono tracking-widest mb-3">{generatedCode}</p>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedCode);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="flex items-center gap-2 mx-auto text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
+                    >
+                      <Copy className="w-4 h-4" />
+                      {copied ? 'Tersalin!' : 'Salin Kode'}
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground mb-6">Berikan kode ini kepada customer untuk melacak status laundry</p>
+
+                  {/* Buttons */}
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      onClick={() => navigate('/dashboard/mitra/orders')}
+                      className="w-full h-12 gap-2"
+                    >
+                      <Package className="w-4 h-4" />
+                      Lihat Semua Order
+                    </Button>
+                    <Button
+                      onClick={() => { setShowSuccessModal(false); }}
+                      variant="outline"
+                      className="w-full h-12"
+                    >
+                      Input Order Lagi
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">

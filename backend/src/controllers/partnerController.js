@@ -116,24 +116,21 @@ const getPartnersByCity = async (req, res) => {
       });
     }
 
-    // ✅ FIX: Case-insensitive search dengan LOWER() dan specify table alias
+    // ✅ FIX: Case-insensitive search
     const normalizedCity = city.trim().toLowerCase();
 
-    // ✅ FIX: Pakai Sequelize.literal dengan table alias yang jelas
+    // ✅ FIX: HAPUS filter partner.status, cukup pakai user.is_active
     const partners = await Partner.findAll({
-      where: {
-        [Op.and]: [
-          // Case-insensitive search: LOWER(Partner.kota) LIKE '%city%'
-          Partner.sequelize.literal(`LOWER(\`Partner\`.\`kota\`) LIKE '%${normalizedCity}%'`),
-          { status: 'active' } // Only show active partners
-        ]
-      },
+      where: 
+        // Case-insensitive search: LOWER(Partner.kota) LIKE '%city%'
+        Partner.sequelize.literal(`LOWER(\`Partner\`.\`kota\`) LIKE '%${normalizedCity}%'`)
+      ,
       include: [{
         model: User,
         as: 'user',
         attributes: ['id', 'email', 'is_active'],
         where: {
-          is_active: true // ✅ Only show partners with active user accounts
+          is_active: true // ✅ HANYA filter berdasarkan user.is_active
         }
       }],
       order: [['nama_toko', 'ASC']]
@@ -156,11 +153,10 @@ const getPartnersByCity = async (req, res) => {
 // Get available cities (cities that have active partners) - PUBLIC
 const getAvailableCities = async (req, res) => {
   try {
-    // 🆕 FIX: Get distinct cities WITH active user filter
+    // 🆕 FIX: Get distinct cities WITH active user filter ONLY
     const partners = await Partner.findAll({
       attributes: ['kota'],
       where: {
-        status: 'active',
         kota: {
           [Op.ne]: null, // Not null
           [Op.ne]: ''    // Not empty string
@@ -171,7 +167,7 @@ const getAvailableCities = async (req, res) => {
         as: 'user',
         attributes: [],
         where: {
-          is_active: true // 🆕 FIX: Only cities with active user accounts
+          is_active: true // ✅ HANYA filter berdasarkan user.is_active
         }
       }],
       group: ['kota'],
