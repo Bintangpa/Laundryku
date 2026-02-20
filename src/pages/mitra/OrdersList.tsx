@@ -54,7 +54,6 @@ const STATUS_OPTIONS = [
   { value: 'Diterima', label: 'Diterima' },
   { value: 'Diproses', label: 'Diproses' },
   { value: 'Siap Diambil', label: 'Siap Diambil' },
-  { value: 'Telah Diambil', label: 'Telah Diambil' },
 ];
 
 // ✅ CHANGED: Added color for 'Telah Diambil'
@@ -86,7 +85,6 @@ export default function OrdersList() {
       setError(null);
 
       const params: any = {};
-      // Only add status filter if it's not 'all'
       if (statusFilter && statusFilter !== 'all') {
         params.status = statusFilter;
       }
@@ -145,6 +143,9 @@ Terima kasih.`;
   };
 
   const filteredOrders = orders.filter((order) => {
+    // Sembunyikan Telah Diambil dari halaman ini (masuk ke riwayat)
+    if (order.status === 'Telah Diambil') return false;
+
     const search = searchTerm.toLowerCase();
     return (
       order.kode_laundry.toLowerCase().includes(search) ||
