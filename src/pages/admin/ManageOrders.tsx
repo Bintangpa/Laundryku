@@ -17,6 +17,7 @@ import {
   Layout,
   Menu,
   UserCheck,
+  Tag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -154,6 +155,7 @@ export default function ManageOrders() {
   const menuItems = [
     { icon: Users, label: 'Kelola Mitra', path: '/admin' },
     { icon: Package, label: 'Kelola Order', path: '/admin/orders' },
+    { icon: Tag, label: 'Kelola Harga', path: '/admin/pricing' },
     { icon: Layout, label: 'Konten Halaman', path: '/admin/content' },
     { icon: Settings, label: 'Pengaturan', path: '/admin/settings' },
   ];

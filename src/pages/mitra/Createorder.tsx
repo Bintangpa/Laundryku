@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ordersAPI } from '@/lib/api';
+import { ordersAPI, pricingAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,15 +27,34 @@ import {
   Package,
   Copy,
   X,
+  Sparkles,
 } from 'lucide-react';
+
+interface ServicePricing {
+  id: number;
+  service_name: string;
+  service_key: string;
+  price_per_unit: number;
+  unit_type: 'kg' | 'item';
+}
+
+// Map nama layanan ke service_key untuk lookup harga
+const SERVICE_KEY_MAP: Record<string, string> = {
+  'Laundry Kiloan':  'laundry_kiloan',
+  'Express 6 Jam':   'express_6_jam',
+  'Setrika Saja':    'setrika_saja',
+  'Laundry Satuan':  'laundry_satuan',
+  'Dry Cleaning':    'dry_cleaning',
+  'Deep Clean':      'deep_clean',
+};
 
 const JENIS_LAYANAN = [
   { value: 'Laundry Kiloan', label: 'Laundry Kiloan', unit: 'kg' },
   { value: 'Laundry Satuan', label: 'Laundry Satuan', unit: 'item' },
-  { value: 'Express 6 Jam', label: 'Express 6 Jam', unit: 'kg' },
-  { value: 'Dry Cleaning', label: 'Dry Cleaning', unit: 'item' },
-  { value: 'Setrika Saja', label: 'Setrika Saja', unit: 'kg' },
-  { value: 'Deep Clean', label: 'Deep Clean', unit: 'item' },
+  { value: 'Express 6 Jam',  label: 'Express 6 Jam',  unit: 'kg'   },
+  { value: 'Dry Cleaning',   label: 'Dry Cleaning',   unit: 'item' },
+  { value: 'Setrika Saja',   label: 'Setrika Saja',   unit: 'kg'   },
+  { value: 'Deep Clean',     label: 'Deep Clean',     unit: 'item' },
 ];
 
 export default function CreateOrder() {
@@ -47,12 +66,14 @@ export default function CreateOrder() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Pricing state
+  const [pricingMap, setPricingMap] = useState<Record<string, ServicePricing>>({});
+  const [autoCalcInfo, setAutoCalcInfo] = useState<string | null>(null);
+
   const [formData, setFormData] = useState({
-    // Customer data
     nama: '',
     no_wa: '',
     alamat: '',
-    // Order data
     jenis_layanan: '',
     berat: '',
     jumlah_item: '',
@@ -62,50 +83,81 @@ export default function CreateOrder() {
     status_pembayaran: 'Belum Lunas',
   });
 
-  const selectedService = JENIS_LAYANAN.find(
-    (s) => s.value === formData.jenis_layanan
-  );
+  const selectedService = JENIS_LAYANAN.find((s) => s.value === formData.jenis_layanan);
 
-  // Format rupiah dengan titik setiap 3 digit
+  // Fetch harga dari API saat komponen mount
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await pricingAPI.getAll();
+        if (response.data.success) {
+          const map: Record<string, ServicePricing> = {};
+          response.data.data.forEach((item: ServicePricing) => {
+            map[item.service_key] = item;
+          });
+          setPricingMap(map);
+        }
+      } catch (err) {
+        console.error('Gagal fetch pricing:', err);
+        // Tidak blokir form jika fetch gagal, mitra bisa input manual
+      }
+    };
+    fetchPricing();
+  }, []);
+
+  // Auto-kalkulasi harga saat layanan / berat / jumlah_item berubah
+  useEffect(() => {
+    if (!formData.jenis_layanan) return;
+
+    const serviceKey = SERVICE_KEY_MAP[formData.jenis_layanan];
+    const pricing = pricingMap[serviceKey];
+    if (!pricing) return;
+
+    if (pricing.unit_type === 'kg' && formData.berat) {
+      const berat = parseFloat(formData.berat);
+      if (!isNaN(berat) && berat > 0) {
+        const total = berat * pricing.price_per_unit;
+        setFormData((prev) => ({ ...prev, total_harga: formatRupiah(total.toString()) }));
+        setAutoCalcInfo(`${berat} kg × Rp ${pricing.price_per_unit.toLocaleString('id-ID')} = Rp ${total.toLocaleString('id-ID')}`);
+      }
+    } else if (pricing.unit_type === 'item' && formData.jumlah_item) {
+      const jumlah = parseInt(formData.jumlah_item);
+      if (!isNaN(jumlah) && jumlah > 0) {
+        const total = jumlah * pricing.price_per_unit;
+        setFormData((prev) => ({ ...prev, total_harga: formatRupiah(total.toString()) }));
+        setAutoCalcInfo(`${jumlah} item × Rp ${pricing.price_per_unit.toLocaleString('id-ID')} = Rp ${total.toLocaleString('id-ID')}`);
+      }
+    }
+  }, [formData.jenis_layanan, formData.berat, formData.jumlah_item, pricingMap]);
+
+  // Reset auto calc info saat ganti layanan
+  useEffect(() => {
+    setAutoCalcInfo(null);
+    setFormData((prev) => ({ ...prev, total_harga: '', berat: '', jumlah_item: '' }));
+  }, [formData.jenis_layanan]);
+
   const formatRupiah = (value: string) => {
-    // Hapus semua karakter non-digit
     const number = value.replace(/\D/g, '');
-    // Format dengan titik sebagai pemisah ribuan
     return number.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   };
 
-  // Parse rupiah yang sudah diformat kembali ke angka
-  const parseRupiah = (value: string) => {
-    return value.replace(/\./g, '');
-  };
+  const parseRupiah = (value: string) => value.replace(/\./g, '');
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handler khusus untuk input total_harga dengan format rupiah
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const numericValue = parseRupiah(rawValue);
     const formattedValue = formatRupiah(numericValue);
-    
-    setFormData((prev) => ({
-      ...prev,
-      total_harga: formattedValue,
-    }));
+    setAutoCalcInfo(null); // user override manual
+    setFormData((prev) => ({ ...prev, total_harga: formattedValue }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,12 +167,10 @@ export default function CreateOrder() {
     setLoading(true);
 
     try {
-      // Validation
       if (!formData.nama || !formData.no_wa || !formData.jenis_layanan || !formData.total_harga) {
         throw new Error('Mohon lengkapi semua field yang wajib diisi');
       }
 
-      // Prepare data
       const orderData = {
         nama: formData.nama,
         no_wa: formData.no_wa,
@@ -129,9 +179,9 @@ export default function CreateOrder() {
         berat: formData.berat ? parseFloat(formData.berat) : null,
         jumlah_item: formData.jumlah_item ? parseInt(formData.jumlah_item) : null,
         catatan: formData.catatan || null,
-        total_harga: parseFloat(parseRupiah(formData.total_harga)), // Parse rupiah format
+        total_harga: parseFloat(parseRupiah(formData.total_harga)),
         estimasi_selesai: formData.estimasi_selesai || null,
-        metode_pembayaran: null, // No longer collected
+        metode_pembayaran: null,
         status_pembayaran: formData.status_pembayaran,
       };
 
@@ -143,30 +193,17 @@ export default function CreateOrder() {
         setSuccess(`Order berhasil dibuat! Kode tracking: ${kodeTracking}`);
         setShowSuccessModal(true);
 
-        // Reset form
         setFormData({
-          nama: '',
-          no_wa: '',
-          alamat: '',
-          jenis_layanan: '',
-          berat: '',
-          jumlah_item: '',
-          catatan: '',
-          total_harga: '',
-          estimasi_selesai: '',
-          status_pembayaran: 'Belum Lunas',
+          nama: '', no_wa: '', alamat: '', jenis_layanan: '',
+          berat: '', jumlah_item: '', catatan: '', total_harga: '',
+          estimasi_selesai: '', status_pembayaran: 'Belum Lunas',
         });
 
-        // Redirect after 3 seconds
-        setTimeout(() => {
-          navigate('/dashboard/mitra/orders');
-        }, 3000);
+        setTimeout(() => navigate('/dashboard/mitra/orders'), 3000);
       }
     } catch (err: any) {
       console.error('Error creating order:', err);
-      setError(
-        err.response?.data?.message || err.message || 'Gagal membuat order'
-      );
+      setError(err.response?.data?.message || err.message || 'Gagal membuat order');
     } finally {
       setLoading(false);
     }
@@ -202,7 +239,6 @@ export default function CreateOrder() {
       {/* Content */}
       <div className="container px-4 py-8">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Alert Messages */}
           {error && (
             <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-3 shadow-md animate-in fade-in slide-in-from-top-2 duration-300">
               <AlertCircle className="w-5 h-5 text-destructive mt-0.5 flex-shrink-0" />
@@ -213,60 +249,48 @@ export default function CreateOrder() {
             </div>
           )}
 
-          {/* Success Modal */}
+          {/* Success Modal - sama persis dengan yang asli */}
           {showSuccessModal && generatedCode && (
-            <>
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" onClick={() => { setShowSuccessModal(false); navigate('/dashboard/mitra/orders'); }} />
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div className="bg-card rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center animate-in fade-in zoom-in-95 duration-300">
-                  {/* Icon */}
-                  <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="w-10 h-10 text-green-500" />
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-card rounded-2xl border border-border shadow-2xl p-8 max-w-md w-full animate-in zoom-in-95 duration-300">
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                    <CheckCircle className="w-8 h-8 text-green-600" />
                   </div>
-
-                  {/* Title */}
-                  <h2 className="text-2xl font-bold text-foreground mb-2">Order Berhasil!</h2>
-                  <p className="text-muted-foreground text-sm mb-6">Pesanan customer telah berhasil diinput</p>
-
-                  {/* Kode Laundry */}
-                  <div className="bg-green-500/5 border-2 border-green-500/20 rounded-2xl p-5 mb-6">
-                    <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Kode Tracking</p>
-                    <p className="text-3xl font-bold text-green-600 font-mono tracking-widest mb-3">{generatedCode}</p>
-                    <button
+                  <h2 className="text-xl font-bold text-foreground">Order Berhasil Dibuat!</h2>
+                  <p className="text-muted-foreground text-sm">
+                    Kode tracking untuk customer:
+                  </p>
+                  <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl p-4">
+                    <code className="text-2xl font-bold text-primary tracking-widest flex-1 text-center">
+                      {generatedCode}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="icon"
                       onClick={() => {
                         navigator.clipboard.writeText(generatedCode);
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2000);
                       }}
-                      className="flex items-center gap-2 mx-auto text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
                     >
-                      <Copy className="w-4 h-4" />
-                      {copied ? 'Tersalin!' : 'Salin Kode'}
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground mb-6">Berikan kode ini kepada customer untuk melacak status laundry</p>
-
-                  {/* Buttons */}
-                  <div className="flex flex-col gap-3">
-                    <Button
-                      onClick={() => navigate('/dashboard/mitra/orders')}
-                      className="w-full h-12 gap-2"
-                    >
-                      <Package className="w-4 h-4" />
-                      Lihat Semua Order
-                    </Button>
-                    <Button
-                      onClick={() => { setShowSuccessModal(false); }}
-                      variant="outline"
-                      className="w-full h-12"
-                    >
-                      Input Order Lagi
+                      {copied ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Berikan kode ini ke customer untuk tracking pesanan.
+                    Halaman akan dialihkan otomatis...
+                  </p>
+                  <Button
+                    onClick={() => navigate('/dashboard/mitra/orders')}
+                    className="w-full gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Ke Daftar Order
+                  </Button>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -276,59 +300,33 @@ export default function CreateOrder() {
                 <User className="w-5 h-5 text-primary" />
                 Data Customer
               </h2>
-
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="nama" className="flex items-center gap-2">
                     <User className="w-4 h-4 text-primary" />
                     Nama Customer <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="nama"
-                    name="nama"
-                    type="text"
-                    placeholder="Nama lengkap customer"
-                    value={formData.nama}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                    className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
+                  <Input id="nama" name="nama" placeholder="Nama lengkap customer"
+                    value={formData.nama} onChange={handleChange} required disabled={loading}
+                    className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="no_wa" className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-primary" />
                     No. WhatsApp <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="no_wa"
-                    name="no_wa"
-                    type="tel"
-                    placeholder="08123456789"
-                    value={formData.no_wa}
-                    onChange={handleChange}
-                    required
-                    disabled={loading}
-                    className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
+                  <Input id="no_wa" name="no_wa" type="tel" placeholder="08123456789"
+                    value={formData.no_wa} onChange={handleChange} required disabled={loading}
+                    className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="alamat" className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-primary" />
                     Alamat (Opsional)
                   </Label>
-                  <Textarea
-                    id="alamat"
-                    name="alamat"
-                    placeholder="Alamat lengkap customer..."
-                    value={formData.alamat}
-                    onChange={handleChange}
-                    disabled={loading}
-                    rows={2}
-                    className="resize-none transition-all focus:ring-2 focus:ring-primary/20"
-                  />
+                  <Textarea id="alamat" name="alamat" placeholder="Alamat lengkap customer..."
+                    value={formData.alamat} onChange={handleChange} disabled={loading}
+                    rows={2} className="resize-none transition-all focus:ring-2 focus:ring-primary/20" />
                 </div>
               </div>
             </div>
@@ -339,29 +337,33 @@ export default function CreateOrder() {
                 <Shirt className="w-5 h-5 text-primary" />
                 Detail Laundry
               </h2>
-
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="jenis_layanan" className="flex items-center gap-2">
                     <Package className="w-4 h-4 text-primary" />
                     Jenis Layanan <span className="text-destructive">*</span>
                   </Label>
-                  <Select
-                    value={formData.jenis_layanan}
-                    onValueChange={(value) =>
-                      handleSelectChange('jenis_layanan', value)
-                    }
-                    disabled={loading}
-                  >
+                  <Select value={formData.jenis_layanan}
+                    onValueChange={(value) => handleSelectChange('jenis_layanan', value)}
+                    disabled={loading}>
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="Pilih jenis layanan" />
                     </SelectTrigger>
                     <SelectContent>
-                      {JENIS_LAYANAN.map((service) => (
-                        <SelectItem key={service.value} value={service.value}>
-                          {service.label}
-                        </SelectItem>
-                      ))}
+                      {JENIS_LAYANAN.map((service) => {
+                        const serviceKey = SERVICE_KEY_MAP[service.value];
+                        const pricing = pricingMap[serviceKey];
+                        return (
+                          <SelectItem key={service.value} value={service.value}>
+                            <span>{service.label}</span>
+                            {pricing && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                — Rp {pricing.price_per_unit.toLocaleString('id-ID')}/{pricing.unit_type}
+                              </span>
+                            )}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -369,50 +371,26 @@ export default function CreateOrder() {
                 {selectedService?.unit === 'kg' && (
                   <div className="space-y-2">
                     <Label htmlFor="berat">Berat (kg)</Label>
-                    <Input
-                      id="berat"
-                      name="berat"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder="Contoh: 3.5"
-                      value={formData.berat}
-                      onChange={handleChange}
-                      disabled={loading}
-                      className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                    />
+                    <Input id="berat" name="berat" type="number" step="0.1" min="0"
+                      placeholder="Contoh: 3.5" value={formData.berat} onChange={handleChange}
+                      disabled={loading} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                   </div>
                 )}
 
                 {selectedService?.unit === 'item' && (
                   <div className="space-y-2">
                     <Label htmlFor="jumlah_item">Jumlah Item</Label>
-                    <Input
-                      id="jumlah_item"
-                      name="jumlah_item"
-                      type="number"
-                      min="1"
-                      placeholder="Contoh: 5"
-                      value={formData.jumlah_item}
-                      onChange={handleChange}
-                      disabled={loading}
-                      className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                    />
+                    <Input id="jumlah_item" name="jumlah_item" type="number" min="1"
+                      placeholder="Contoh: 5" value={formData.jumlah_item} onChange={handleChange}
+                      disabled={loading} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                   </div>
                 )}
 
                 <div className="space-y-2">
                   <Label htmlFor="catatan">Catatan (Opsional)</Label>
-                  <Textarea
-                    id="catatan"
-                    name="catatan"
-                    placeholder="Catatan khusus untuk laundry ini..."
-                    value={formData.catatan}
-                    onChange={handleChange}
-                    disabled={loading}
-                    rows={2}
-                    className="resize-none transition-all focus:ring-2 focus:ring-primary/20"
-                  />
+                  <Textarea id="catatan" name="catatan" placeholder="Catatan khusus untuk laundry ini..."
+                    value={formData.catatan} onChange={handleChange} disabled={loading}
+                    rows={2} className="resize-none transition-all focus:ring-2 focus:ring-primary/20" />
                 </div>
               </div>
             </div>
@@ -423,38 +401,32 @@ export default function CreateOrder() {
                 <Calculator className="w-5 h-5 text-primary" />
                 Pembayaran & Estimasi
               </h2>
-
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="total_harga" className="flex items-center gap-2">
                     <Calculator className="w-4 h-4 text-primary" />
                     Total Harga (Rp) <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="total_harga"
-                    name="total_harga"
-                    type="text"
-                    placeholder="Contoh: 25.000"
-                    value={formData.total_harga}
-                    onChange={handlePriceChange}
-                    required
-                    disabled={loading}
-                    className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
+                  <Input id="total_harga" name="total_harga" type="text"
+                    placeholder="Contoh: 25.000" value={formData.total_harga}
+                    onChange={handlePriceChange} required disabled={loading}
+                    className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
+
+                  {/* Auto-calc info badge */}
+                  {autoCalcInfo && (
+                    <div className="flex items-center gap-2 text-xs text-primary bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 animate-in fade-in duration-300">
+                      <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>Dihitung otomatis: <strong>{autoCalcInfo}</strong></span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="status_pembayaran">Status Pembayaran</Label>
-                  <Select
-                    value={formData.status_pembayaran}
-                    onValueChange={(value) =>
-                      handleSelectChange('status_pembayaran', value)
-                    }
-                    disabled={loading}
-                  >
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={formData.status_pembayaran}
+                    onValueChange={(value) => handleSelectChange('status_pembayaran', value)}
+                    disabled={loading}>
+                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Belum Lunas">Belum Lunas</SelectItem>
                       <SelectItem value="Lunas">Lunas</SelectItem>
@@ -467,45 +439,26 @@ export default function CreateOrder() {
                     <Calendar className="w-4 h-4 text-primary" />
                     Estimasi Selesai (Opsional)
                   </Label>
-                  <Input
-                    id="estimasi_selesai"
-                    name="estimasi_selesai"
-                    type="date"
-                    value={formData.estimasi_selesai}
-                    onChange={handleChange}
-                    disabled={loading}
-                    className="h-11 transition-all focus:ring-2 focus:ring-primary/20"
-                  />
+                  <Input id="estimasi_selesai" name="estimasi_selesai" type="date"
+                    value={formData.estimasi_selesai} onChange={handleChange}
+                    disabled={loading} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                 </div>
               </div>
             </div>
 
-            {/* Submit Buttons */}
+            {/* Submit */}
             <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate('/dashboard/mitra')}
-                disabled={loading}
-                className="flex-1 h-12 hover:bg-secondary transition-all"
-              >
+              <Button type="button" variant="outline"
+                onClick={() => navigate('/dashboard/mitra')} disabled={loading}
+                className="flex-1 h-12 hover:bg-secondary transition-all">
                 Batal
               </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="flex-1 h-12 gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all"
-              >
+              <Button type="submit" disabled={loading}
+                className="flex-1 h-12 gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all">
                 {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Menyimpan...
-                  </>
+                  <><Loader2 className="w-4 h-4 animate-spin" />Menyimpan...</>
                 ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4" />
-                    Simpan Pesanan
-                  </>
+                  <><CheckCircle className="w-4 h-4" />Simpan Pesanan</>
                 )}
               </Button>
             </div>

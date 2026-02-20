@@ -24,7 +24,8 @@ import {
   Package,
   Settings,
   ChevronRight,
-  Layout
+  Layout,
+  Tag
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -160,6 +161,11 @@ export default function AdminDashboard() {
       icon: Package,
       label: 'Kelola Order',
       path: '/admin/orders'
+    },
+    {
+      icon: Tag,
+      label: 'Kelola Harga',
+      path: '/admin/pricing'
     },
     {
       icon: Layout,

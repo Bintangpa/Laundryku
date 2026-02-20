@@ -14,6 +14,7 @@ import NotFound from '@/pages/NotFound';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import AdminSettings from '@/pages/admin/AdminSettings';
 import ManageOrders from '@/pages/admin/ManageOrders';
+import KelolaHarga from '@/pages/admin/Kelolaharga';
 
 // Mitra Pages
 import MitraDashboard from '@/pages/mitra/Dashboard';
@@ -50,6 +51,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/content" element={<AdminDashboard />} />
             <Route path="/admin/orders" element={<ManageOrders />} />
+            <Route path="/admin/pricing" element={<KelolaHarga />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
           </Route>
 

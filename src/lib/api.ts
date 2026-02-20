@@ -145,4 +145,17 @@ export const homepageAPI = {
 };
 
 
+// ========== PRICING API ==========
+// Tambahkan ini di file api.ts lo, setelah bagian adminAPI
+
+export const pricingAPI = {
+  // Public - fetch semua harga (untuk kalkulasi otomatis di Createorder)
+  getAll: () => api.get('/pricing'),
+  getByKey: (service_key: string) => api.get(`/pricing/key/${service_key}`),
+
+  // Admin only - update harga
+  update: (id: number, data: { price_per_unit: number }) =>
+    api.put(`/pricing/${id}`, data),
+};
+
 export default api;

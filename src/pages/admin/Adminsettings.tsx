@@ -29,7 +29,8 @@ import {
   EyeOff,
   ChevronRight,
   UserCheck,
-  Package
+  Package,
+  Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,30 +62,11 @@ export default function AdminSettings() {
 
   // Menu items
   const menuItems = [
-    {
-      icon: Users,
-      label: 'Kelola Mitra',
-      path: '/admin',
-      active: false
-    },
-    {
-      icon: Package,
-      label: 'Kelola Order',
-      path: '/admin/orders',
-      active: false
-    },
-    {
-      icon: Layout,
-      label: 'Konten Halaman',
-      path: '/admin/content',
-      active: false
-    },
-    {
-      icon: Settings,
-      label: 'Pengaturan',
-      path: '/admin/settings',
-      active: true
-    }
+    { icon: Users, label: 'Kelola Mitra', path: '/admin', active: false },
+    { icon: Package, label: 'Kelola Order', path: '/admin/orders', active: false },
+    { icon: Tag, label: 'Kelola Harga', path: '/admin/pricing', active: false },
+    { icon: Layout, label: 'Konten Halaman', path: '/admin/content', active: false },
+    { icon: Settings, label: 'Pengaturan', path: '/admin/settings', active: true }
   ];
 
   const handleLogout = () => {
